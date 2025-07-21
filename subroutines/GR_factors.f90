@@ -105,10 +105,33 @@ function dglpfacthick(r,a,h,mu)
   mathcalA = (r**2+a**2)**2 - (r**2-2.0*r+a**2)*a**2*sindisk
   Sig      = r**2 + a**2 * mu**2
   gphiphi  = mathcalA * sindisk**2 / Sig
-  gsd = 1.0-2.0*r/Sig + 4.0*a*r*sindisk**2/Sig*angvel - gphiphi*angvel**2
-  gsd = Dh/(h**2+a**2) / gsd
-  gsd = sqrt( gsd )
-  dglpfacthick = gsd
+  if (r .ge. ISCO) then 
+     gsd = 1.0-2.0*r/Sig + 4.0*a*r*sindisk**2/Sig*angvel - gphiphi*angvel**2
+     gsd = Dh/(h**2+a**2) / gsd
+     gsd = sqrt( gsd )
+     dglpfacthick = gsd
+  else
+     call initialdirection(mus,sqrt(1-mus**2.0),0.d0,0.d0,1.d0,a,h,velocity ,lambda,q,f1234)
+     pcros = Pemdisk(f1234,lambda,q,0.d0,1.d0,a,h,1.d0,mu,1.d15,1.d0+sqrt(1.d0-a**2))
+!      qi2=sqrt(1-mus**2.0)*(h**2.0+a**2.0)**2.0/(h**2-2.0*h+a**2.0)-a**2.0
+     call YNOGK(pcros-1.d-5,f1234,lambda,q,0.d0,1.d0,a,h,1.d0,&
+          r1,mu1,phi1,t1,sigma1) 
+     call YNOGK(pcros,f1234,lambda,q,0.d0,1.d0,a,h,1.d0,&
+          r2,mu2,phi2,t2,sigma2) 
+     if(pcros.lt.0.d0)then
+        dglpfacthick=0.d0
+     else
+        vt1=vt(r,a)
+        vr1=vr(r,a)
+        kr=sqrt((r**2.0+a**2.0)**2.0-Delta*(q+a**2.0))/Delta
+        if ((r2-r1).lt.0.d0)then
+           dglpfacthick=-sqrt(Dh/(h**2+a**2))*(-vt1-kr*vr1)
+        else
+           dglpfacthick=-sqrt(Dh/(h**2+a**2))*(-vt1+kr*vr1)
+        endif
+     endif
+
+  endif
   return
 end function dglpfacthick
 !-----------------------------------------------------------------------
@@ -195,3 +218,55 @@ end function dlgfacthick
       return
       end
 !-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
+      function kinematic_energy(a,isco)
+      implicit none
+      double precision a,isco
+      double precision kinematic_energy
+      kinematic_energy=(1.0-(2.0/isco)+a/(isco**1.5))/(sqrt(1.0-3.0/isco+2.0*a/(isco**1.5)))
+      return
+      end
+!-----------------------------------------------------------------------
+      function angular_momentum(a,isco)
+      implicit none
+      double precision a,isco
+      double precision angular_momentum
+      angular_momentum=((isco**0.5)*(1.0+((a**2.0)/(isco**2.0))-2.0*a/(isco**1.5)))/(sqrt(1.0-3.0/isco+2.0*a/(isco**1.5)))
+      return
+      end
+!-----------------------------------------------------------------------
+      function vt(r,a)
+      use isco_data
+      implicit none
+      double precision r,a
+      double precision Delta
+      double precision vt
+      Delta   = r**2 - 2*r + a**2
+      vt=(1.0/Delta)*((r**2.0+a**2.0+2.0*((a**2.0)/r))*KE-(2.0*a*AM/r))
+      return
+      end
+!-----------------------------------------------------------------------
+      function vr(r,a)
+      use isco_data
+      implicit none
+      double precision r,a
+      double precision vr
+      vr=(KE**2.0)-1.0+2.0/r+((a**2.0)*(KE**2.0-1.0)-AM**2.0)/(r**2.0)+(2.0*(AM-a*KE)**2.0)/(r**3.0)
+      if(vr.lt.0.d0)then
+      vr=0.d0
+      endif
+      vr=-sqrt(vr)
+      return
+      end
+!-----------------------------------------------------------------------
+      function vphi(r,a)
+      use isco_data
+      implicit none
+      double precision r,a
+      double precision Delta
+      double precision vphi
+      Delta   = r**2 - 2*r + a**2
+      vphi=(1.0/Delta)*((2.0*a*KE/r)+(1-2/r)*AM)
+      return
+      end

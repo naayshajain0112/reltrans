@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-subroutine rtrans(verbose,dset,nlp,spin,h,mu0,Gamma,rin,rout,honr,d,rnmax,zcos,b1,b2,qboost,eta_0,&
+subroutine rtrans(verbose,dset,nlp,spin,h,mu0,Gamma,rin,rout,rmin,honr,d,rnmax,zcos,b1,b2,qboost,eta_0,&
                   fcons,nro,nphi,ne,dloge,nf,fhi,flo,me,xe,ker_W0,ker_W1,ker_W2,ker_W3,frobs,frrel)
     ! Code to calculate the transfer function for an accretion disk.
     ! This code first does full GR ray tracing for a camera with impact parameters < bmax
@@ -77,7 +77,7 @@ subroutine rtrans(verbose,dset,nlp,spin,h,mu0,Gamma,rin,rout,honr,d,rnmax,zcos,b
     ! Settings/initialization
     nron     = 100
     nphin    = 100
-    rmin     = disco( spin )
+    ! rmin     = disco( spin )
     scal     = 1.d0
     velocity = 0.d0
     mudisk   = honr / sqrt( honr**2 + 1.d0  )
@@ -466,4 +466,26 @@ function newtex(rlp,dcosdr,ndelta,re,h,honr,kk)
   newtex = newtex * re / ( (h-honr*re     )**2 + re**2      )**1.5
   return
 end function newtex  
+!-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
+      function rfunc(a,mu0)
+! Sets minimum rn to use for impact parameter grid depending on mu0
+! This is just an analytic function based on empirical calculations:
+! I simply set a=0.998, went through the full range of mu0, and then
+! calculated the lowest rn value for which there was a disk crossing.
+! The function used here makes sure the calculated rnmin is always
+! slightly lower than the one required.
+      implicit none
+      double precision rfunc,mu0,a
+      if( a .gt. 0.8 )then
+        rfunc = 1.5d0 + 0.5d0 * mu0**5.5d0
+        rfunc = min( rfunc , -0.1d0 + 5.6d0*mu0 )
+        rfunc = max( 0.1d0 , rfunc )
+      else
+        rfunc = 3.0d0 + 0.5d0 * mu0**5.5d0
+        rfunc = min( rfunc , -0.2d0 + 10.0d0*mu0 )
+        rfunc = max( 0.1d0 , rfunc )
+      end if
+      end
 !-----------------------------------------------------------------------
