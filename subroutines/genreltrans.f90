@@ -61,7 +61,6 @@ subroutine genreltrans(Cp, dset, nlp, ear, ne, param, ifl, photar)
     integer           :: fbinx 
     real, allocatable :: fix(:)
     !relativistic parameters and limit on rin and h
-    double precision :: rmin, rh 
     double precision :: height(nlp),contx_int(nlp)
     !lens needs to be allocatable to save it. 
     double precision, allocatable :: frobs(:),frrel(:)
@@ -118,6 +117,7 @@ subroutine genreltrans(Cp, dset, nlp, ear, ne, param, ifl, photar)
     if (.not. allocated(re1)) allocate(re1(nphi,nro))
     if (.not. allocated(taudo1)) allocate(taudo1(nphi,nro))
     if (.not. allocated(pem1)) allocate(pem1(nphi,nro))
+    if (.not. allocated(t_r)) allocate(t_r(nphi,nro))
     
     !Note: the two different calls are because for the double lP we set the temperature from the coronal frame(s), but for the single
     !LP we use the temperature in the observer frame
@@ -175,26 +175,6 @@ subroutine genreltrans(Cp, dset, nlp, ear, ne, param, ifl, photar)
         DC     = 0
         boost  = abs(boost)
     end if
-    ! !this could go into a subroutine -- just put it in set_params?
-    ! !Set minimum r (ISCO) and convert rin and h to rg
-    ! if( abs(a) .gt. 0.999 ) a = sign(a,1.d0) * 0.999
-    ! ! rmin   = disco( a )
-    ! if( rin .lt. 0.d0 ) rin = abs(rin) * disco( a )
-    ! rh     = 1.d0+sqrt(1.d0-a**2)
-    ! rmin = rh
-    ! if( verbose .gt. 0 ) write(*,*)"rin (Rg)=",rin
-    ! if( rin .lt. rmin )then
-    !     write(*,*)"Warning! rin<ISCO! Set to ISCO"
-    !     rin = rmin
-    ! end if
-    ! do m=1,nlp 
-    !     if( h(m) .lt. 0.d0 ) h(m) = abs(h(m)) * rh
-    !     if( verbose .gt. 0 ) write(*,*)"h (Rg)=",h(m)
-    !     if( h(m) .lt. 1.5d0*rh )then
-    !         write(*,*)"Warning! h<1.5*rh! Set to 1.5*rh"
-    !         h(m) = 1.5d0 * rh
-    !     end if 
-    ! end do
 
     !Determine if I need to calculate the kernel 
     call need_check(Cp,Cpsave,param,paramsave,fhi,flo,fhisave,flosave,nf,nfsave,needtrans,needconv)
@@ -255,7 +235,7 @@ subroutine genreltrans(Cp, dset, nlp, ear, ne, param, ifl, photar)
        allocate (frrel(nlp))
        !Calculate the Kernel for the given parameters
        status_re_tau = .true.       
-       call rtrans(verbose,dset,nlp,a,h,muobs,Gamma,rin,rout,rmin,honr,d,rnmax,zcos,b1,b2,qboost,eta_0,&
+       call rtrans(verbose,dset,nlp,a,h,muobs,Gamma,rin,rout,honr,d,rnmax,zcos,b1,b2,qboost,eta_0,&
                     fcons,nro,nphi,nex,dloge,nf,fhi,flo,me,xe,ker_W0,ker_W1,ker_W2,ker_W3,frobs,frrel)
        ! print *, 'gso ', gso(1)
     end if

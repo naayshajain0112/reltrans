@@ -27,7 +27,7 @@ subroutine getdcos(a_spin,h,mudisk,n,nlp,rout,npts,r1,dcosdr,tc,cosd1,cosdout)
     double precision r1(n,nlp)
     double precision dcosdr(n,nlp),tc(n,nlp)
     double precision deltas,cosd1(n,nlp),r_min,r_max,disco
-    double precision rcros,mucros,phicros,tcros,sigmacros,pcros
+    double precision rcros,mucros,phicros,tcros,sigmacros,pcros, t_r1, t_r2
     !      double precision cosphi,costheta,d1(n),sinphi,sintheta
     scal     = 1.d0   !Meaningless scaling factor
     mus      = 1.d0   !Position of source: mus=0 means on-axis
@@ -59,7 +59,7 @@ subroutine getdcos(a_spin,h,mudisk,n,nlp,rout,npts,r1,dcosdr,tc,cosd1,cosdout)
             !Calculate value of p-coordinate at mu=0
             pcros = Pemdisk(f1234,lambda,q,sins,mus,a_spin,h(m),scal,mudisk,r_max,r_min)
             !From that, calculate r, phi and t at mu=0
-            call YNOGK(pcros,f1234,lambda,q,sins,mus,a_spin,h(m),scal,rcros,mucros,phicros,tcros,sigmacros)
+            call YNOGK(pcros,f1234,lambda,q,sins,mus,a_spin,h(m),scal,rcros,mucros,phicros,tcros,sigmacros, t_r1, t_r2)
             if( pcros .gt. 0.0 )then
                 !write(88,*)rcros,pr
                 counter        = counter + 1

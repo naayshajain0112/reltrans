@@ -89,6 +89,59 @@
 !       end
 ! !-----------------------------------------------------------------------
 
+!-----------------------------------------------------------------------
+function dlgfac(a,mu0,alpha,r)
+!c Calculates g-factor for a disk in the BH equatorial plane
+  implicit none
+  double precision dlgfac,a,mu0,alpha,r
+  double precision sin0,omega,Delta,Sigma2,gtt,gtp,gpp
+  sin0   = sqrt( 1.0 - mu0**2 )
+  omega  = 1. / (r**1.5+a)
+  Delta  = r**2 - 2*r + a**2
+  Sigma2 = (r**2+a**2)**2 - a**2 * Delta
+  gtt    = 4*a**2/Sigma2 - r**2*Delta/Sigma2
+  gtp    = -2*a/r
+  gpp    = Sigma2/r**2
+  dlgfac = sqrt( -gtt - 2*omega*gtp - omega**2.*gpp )
+  dlgfac = dlgfac / ( 1.+omega*alpha*sin0 )
+  return
+end function dlgfac
+!-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
+function dlgfac_inside_isco(a, mu0, alpha, beta, r, t_r)
+!c Calculates g-factor for a disk in the BH equatorial plane
+  use dyn_gr 
+  implicit none
+  double precision dlgfac_inside_isco,a,mu0, alpha, r, disco, beta
+  double precision sin0,Delta
+  double precision kr,vt,vr, vp
+  double precision eis, jis
+  double precision lam, q 
+  integer t_r
+
+  vr = -(2./(3.*risco))**0.5 * (risco/r - 1.0)**1.5
+  eis = (1. - 2./(3.*risco))**0.5
+  jis = 2. * 3.**0.5 * (1 - 2.*a/(3.*risco**0.5))
+
+  Delta  = r**2. - 2.*r + a**2.0
+
+  vp = (2*eis*a + jis*(r-2))/(r*(r**2.0-2.*r+a**2.0))
+  vt = (eis*(r**3.0 + r * a**2.0 + 2.0 * a**2.0) - 2.0*jis*a)/(r*(r**2.0-2.*r+a**2.0))
+
+  sin0   = sqrt( 1.0 - mu0**2 )
+  lam = -alpha * sin0
+
+  q = (beta**2.0 - a**2.0 * mu0**2.0 + alpha**2.0 * mu0**2.0)
+  
+  kr=(r**4.-(q+lam**2.-a**2.)*r**2.+2.*r*(q+(lam-a)**2.) - a**2.0*q)/Delta**2.0
+
+  dlgfac_isco=1/(+vt - (-1.0)**t_r * sqrt(kr)*vr - vp*lam)
+  
+  return
+end function dlgfac_inside_isco
+!-----------------------------------------------------------------------
+
 
 !-----------------------------------------------------------------------
 function dglpfacthick(r,a,h,mu)

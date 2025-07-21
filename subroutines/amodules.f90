@@ -44,6 +44,8 @@ MODULE dyn_gr
     logical :: status_re_tau  
     integer, parameter :: ndelta = 1000
     integer         , dimension(:)  , allocatable :: npts
+    integer         , dimension(:,:), allocatable :: t_r
+    double precision                              :: rh, risco, rmin
     double precision, dimension(:,:), allocatable :: re1,taudo1,pem1
     double precision, dimension(:,:), allocatable :: dcosdr, cosd, rlp, tlp
     save status_re_tau
@@ -55,7 +57,6 @@ module xillver_tables
     character (len=50), parameter ::  xillverDCp = 'xillverCp_v3.4_normalised.fits'
     character (len=200) ::  path_tables 
     character (len=200) ::  pathname_xillver 
-    character (len=200) ::  pathname_xillverD 
     character (len=200) ::  pathname_xillverDCp
     character (len=500) ::  path_name_reflionx_table
 end module xillver_tables
@@ -1750,7 +1751,7 @@ end module conv_mod
       contains
 !******************************************************************************************** 
       SUBROUTINE YNOGK(p,f1234,lambda,q,sinobs,muobs,a_spin,robs,scal,&
-                        radi,mu,phi,time,sigma) 
+                        radi,mu,phi,time,sigma, tr1, tr2) 
 !********************************************************************************************
 !*     PURPOSE:  Computes four Boyer-Lindquist coordinates (r,\mu,\phi,t) and affine parameter 
 !*               \sigma as functions of parameter p, i.e. functions r(p), \mu(p), \phi(p), t(p)

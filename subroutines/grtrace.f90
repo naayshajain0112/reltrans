@@ -8,7 +8,7 @@
       integer nro,nphi,i,j
       double precision rn(nro),mueff,mu0,spin,rmin,rout,mudisk,d
       double precision phin,alpha,beta,cos0,sin0,scal,velocity(3),f1234(4),lambda,q
-      double precision pem,re,mucros,phie,taudo,sigmacros      
+      double precision pem,re,mucros,phie,taudo,sigmacros, t_r1, t_r2
       cos0  = mu0
       sin0  = sqrt(1.0-cos0**2)
       scal     = 1.d0
@@ -26,9 +26,10 @@
           !pem > 1 means there is a solution
           !pem < 1 means there is no solution
           if( pem .gt. 0.0d0 )then
-            call YNOGK(pem,f1234,lambda,q,sin0,cos0,spin,d,scal,re,mucros,phie,taudo,sigmacros)
+            call YNOGK(pem,f1234,lambda,q,sin0,cos0,spin,d,scal,re,mucros,phie,taudo,sigmacros, t_r1, t_r2)
             taudo1(j,i) = taudo - d
             re1(j,i)    = re
+            t_r(j,i)    = t_r1
           end if
         end do
       end do

@@ -2,6 +2,7 @@ subroutine set_param(Cp,dset,param,nlp,h,a,inc,rin,rout,zcos,Gamma,logxi,Dkpc,Af
                      eta_0,eta,beta_p,Nh,boost,qboost,Mass,honr,b1,b2,floHz,fhiHz,ReIm,DelA,DelAB,&
                      g,Anorm,resp,refvar,verbose)
 !!! Sets the parameters of reltrans depending on the Cp variable
+  use dyn_gr
   implicit none
   integer         , intent(in)   :: Cp, dset, nlp, verbose
   real            , intent(in)   :: param(32)
@@ -18,11 +19,12 @@ subroutine set_param(Cp,dset,param,nlp,h,a,inc,rin,rout,zcos,Gamma,logxi,Dkpc,Af
     rh     = 1.d0+sqrt(1.d0-a**2)
     if( abs(a) .gt. 0.999 ) a = sign(a,1.d0) * 0.999
     ! rmin   = disco( a )
-    if( rin .lt. 0.d0 ) rin = abs(rin) * disco( a )
-    rmin = rh
+    risco = disco(a)
+    if( rin .lt. 0.d0 ) rin = abs(rin) * risco
+    rmin = rh + 0.0001
     if( rin .lt. rmin )then
         write(*,*)"Warning! rin < Event Horizon! Set to the Event Horizon (+0.0001Rg)"
-        rin = rmin + 0.0001
+        rin = rmin
     end if
     do m=1,nlp 
         if( h(m) .lt. 0.d0 ) h(m) = abs(h(m)) * rh

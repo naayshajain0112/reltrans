@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-subroutine rtrans(verbose,dset,nlp,spin,h,mu0,Gamma,rin,rout,rmin,honr,d,rnmax,zcos,b1,b2,qboost,eta_0,&
+subroutine rtrans(verbose,dset,nlp,spin,h,mu0,Gamma,rin,rout,honr,d,rnmax,zcos,b1,b2,qboost,eta_0,&
                   fcons,nro,nphi,ne,dloge,nf,fhi,flo,me,xe,ker_W0,ker_W1,ker_W2,ker_W3,frobs,frrel)
     ! Code to calculate the transfer function for an accretion disk.
     ! This code first does full GR ray tracing for a camera with impact parameters < bmax
@@ -186,23 +186,26 @@ subroutine rtrans(verbose,dset,nlp,spin,h,mu0,Gamma,rin,rout,rmin,honr,d,rnmax,z
         i = i - 1                                       !i counts over the camera until it reaches the disk inner radius
         odisc = 0
         do j = 1,NPHI                                   !azimuth over BH on the disk
-            phin  = (j-0.5) * 2.d0 * pi / dble(nphi) 
+            phin  = (j-0.5) * 2.d0 * pi / dble(nphi)
             alpha = rn(i) * sin(phin)
             beta  = -rn(i) * cos(phin) * mueff
             !If the ray hits the disk, calculate flux and time lag
             if( pem1(j,i) .gt. 0.0d0 )then
                 re    = re1(j,i)
                 if( re .gt. rin .and. re .lt. rout )then
-                    odisc = 1  
-                    do m=1,nlp                           
-                        taudo = taudo1(j,i)           
-                        g = dlgfacthick(spin,mu0,alpha,re,mudisk) !disk to observer g factor
+                    odisc = 1
+                    do m=1,nlp
+                       taudo = taudo1(j,i)
+                       if (re .gt. risco) g = dlgfac(a,mu0,alpha,re)
+                       if (re .gt. rmin .and. re .lt. risco) g = dlgfac_inside_isco(a, mu0, alpha, beta, re, t_r(j,i))
+                        ! g = dlgfacthick(spin,mu0,alpha,re,mudisk) !disk to observer g factor
+                        gsd(m) = dglpfacthick(re,spin,h(m),mudisk) !source to disk g factor
                         !Find the rlp bin that corresponds to re
                         kk = get_index(rlp(:,m),ndelta,re,rmin,npts(m))
                         !Interpolate (or extrapolate) the time function
                         tausd = interper(rlp(:,m),tlp(:,m),ndelta,re,kk)
                         tau(m) = (1.d0+zcos)*(tausd+taudo-tauso(1)) !Time lag between direct and reflected photons
-                        !Interpolate |dcos\delta/dr| function                  
+                        !Interpolate |dcos\delta/dr| function
                         cosfac = interper(rlp(:,m),dcosdr(:,m),ndelta,re,kk)
                         mus = interper(rlp(:,m),cosd(:,m),ndelta,re,kk)
                         !Extrapolate to Newtonian if need be
@@ -213,84 +216,83 @@ subroutine rtrans(verbose,dset,nlp,spin,h,mu0,Gamma,rin,rout,rmin,honr,d,rnmax,z
                         !Calculate angular emissivity
                         ptf = pnorm * pfunc_raw(-mus,b1,b2,qboost)
                         !Calculate flux from pixel
-                        gsd(m) = dglpfacthick(re,spin,h(m),mudisk) !source to disk g factor
                         emissivity(m) = gsd(m)**Gamma * 2.d0 * pi * ptf
                         emissivity(m) = emissivity(m) * cosfac / dareafac(re,spin)                  
                         dFe(m) = emissivity(m) * g**3 * domega(i) / (1.d0+zcos)**3
                         !calculate extra factors that go into the transfer functions for double lps
                         if (nlp .gt. 1) then
-                            thetafac(m) = emissivity(m)*gso(m)**(Gamma-2.)*gsd(m)**(2.-Gamma)                      
+                            thetafac(m) = emissivity(m)*gso(m)**(Gamma-2.)*gsd(m)**(2.-Gamma)
                         else !single lamp post case, double check this later
-                            thetafac(m) = 1.                            
-                        endif                        
+                            thetafac(m) = 1.
+                        endif
                         !Add to reflection fraction
-                        frobs(m) = frobs(m) + 2.0*g**3*gsd(m)*cosfac/dareafac(re,spin)*domega(i)    
+                        frobs(m) = frobs(m) + 2.0*g**3*gsd(m)*cosfac/dareafac(re,spin)*domega(i)
                         ! write(*,*) g, gsd(m), cosfac, dareafac(re, spin), domega(i)
                     end do
                    
                     !tbd: put a second for loop over lps here, now that both emissivity/dfe/tau are known
-                    do nl=1,nlp 
+                    do nl=1,nlp
                         !Work out energy bin
                         gbin = ceiling( log10( g/(1.d0+zcos) ) / dloge ) + ne / 2
                         gbin = MAX( 1    , gbin  )
-                        gbin = MIN( gbin , ne    )         
+                        gbin = MIN( gbin , ne    )
                         !Work out radial bin
                         rbin = ceiling( log10(re/rin) / dlogr )
                         rbin = MAX( rbin , 1  )
                         rbin = MIN( rbin , xe )
                         !Add to the radial dependence of the transfer function TBD MAKE SURE THIS IS RIGHT
-                        dfer_arr(rbin) = dfer_arr(rbin) + dFe(nl)                 
+                        dfer_arr(rbin) = dfer_arr(rbin) + dFe(nl)
                         !Calculate emission angle and work out which mue bin to add to
                         mue   = demang(spin,mu0,re,alpha,beta)
                         mubin = ceiling( mue * dble(me) )
                         !calculate the extra factors for w2/3
                         !if (nl .eq. 1 .and. nlp .gt. 1) then
-                        !    emisfac = emissivity(1)+eta_0*emissivity(2)                          
+                        !    emisfac = emissivity(1)+eta_0*emissivity(2)
                         if (nlp .gt. 1) then
                             emisfac = (emissivity(1)+eta_0*emissivity(2))/(1.+eta_0)
-                            kfac = (emissivity(1)+eta_0*emissivity(2))/(thetafac(1)+eta_0*thetafac(2)) 
+                            kfac = (emissivity(1)+eta_0*emissivity(2))/(thetafac(1)+eta_0*thetafac(2))
                         else
                             emisfac = emissivity(1)
                             kfac = emissivity(1)
                             !single lamp post case, double check this later
                         endif     
                         !this is just to make the formatting below less ugly     
-                        normfac = real(g**3*domega(i)/(1.d0+zcos)**3)                 
+                        normfac = real(g**3*domega(i)/(1.d0+zcos)**3)
                         !Add to the transfer function integral
                         do fbin = 1,nf
                             cexp = cmplx(cos(real(2.d0*pi*tau(nl)*fi(fbin))),sin(real(2.d0*pi*tau(nl)*fi(fbin))))
                             ker_W0(nl,gbin,fbin,mubin,rbin) = ker_W0(nl,gbin,fbin,mubin,rbin) + real(dFe(nl))*cexp
                             ker_W1(nl,gbin,fbin,mubin,rbin) = ker_W1(nl,gbin,fbin,mubin,rbin) + &
-                                                              real(log(gsd(nl)))*real(dFe(nl))*cexp  
-                            !tbd redo these transfer functions                             
+                                                              real(log(gsd(nl)))*real(dFe(nl))*cexp
+                            !tbd redo these transfer functions
                             ker_W2(nl,gbin,fbin,mubin,rbin) = ker_W2(nl,gbin,fbin,mubin,rbin) + &
                                                               emisfac*normfac*cexp
                             ker_W3(nl,gbin,fbin,mubin,rbin) = ker_W3(nl,gbin,fbin,mubin,rbin) + &
-                                                              kfac*thetafac(nl)*normfac*cexp 
+                                                              kfac*thetafac(nl)*normfac*cexp
                         end do
-                        !if large verbose, start saving the impulse response function to file 
+                        !if large verbose, start saving the impulse response function to file
                         if( verbose .gt. 1 ) then
                             !find the appropriate energy and time bins
-                            gbin = ceiling(g/dg) 
+                            gbin = ceiling(g/dg)
                             gbin = MAX( 1    , gbin  )
                             gbin = MIN( gbin , ne    )
                             tbin = ceiling( log10( tau(nl) / tar(0) ) / dlogt )
                             !write(102,*)re,tau,log10( tau / tar(0) ) / dlogt
                             tbin = MAX( 1    , tbin )
                             tbin = MIN( tbin , nt   )
-                            ! kernel of the impulse response function              
-                            resp(gbin,tbin) = resp(gbin,tbin) + dFe(nl)  
+                            ! kernel of the impulse response function
+                            resp(gbin,tbin) = resp(gbin,tbin) + dFe(nl)
                         end if 
-                    end do                    
+                    end do
                 end if
-            end if                
+            end if
         end do
     end do
 
     ! Now trace rays for that bigger camera (obviously a lot easier because it's Newtonian)
     do i = 1,nron
         do j = 1,nphin
-            phin  = (j-0.5) * 2.d0 * pi / dble(nphin) 
+            phin  = (j-0.5) * 2.d0 * pi / dble(nphin)
             alpha = rnn(i) * sin(phin)
             beta  = -rnn(i) * cos(phin) * mueff
             call drandphithick(alpha,beta,mu0,mudisk,re,phie)
@@ -337,7 +339,7 @@ subroutine rtrans(verbose,dset,nlp,spin,h,mu0,Gamma,rin,rout,rmin,honr,d,rnmax,z
                     rbin = MAX( rbin , 1  )
                     rbin = MIN( rbin , xe )
                     !Add to the radial dependence of the transfer function
-                    dfer_arr(rbin) = dfer_arr(rbin) + dFe(nl)                     
+                    dfer_arr(rbin) = dfer_arr(rbin) + dFe(nl)
                     !Calculate emission angle and work out which mue bin to add to
                     mue = demang(spin,mu0,re,alpha,beta)
                     mubin = ceiling( mue * dble(me) )
@@ -351,14 +353,14 @@ subroutine rtrans(verbose,dset,nlp,spin,h,mu0,Gamma,rin,rout,rmin,honr,d,rnmax,z
                         !single lamp post case, double check this later
                     endif  
                     !this is just to make the formatting below less ugly     
-                    normfac = real(g**3*domegan(i)/(1.d0+zcos)**3)                 
+                    normfac = real(g**3*domegan(i)/(1.d0+zcos)**3)
                     !Add to the transfer function integral
                     do fbin = 1,nf
                         cexp = cmplx(cos(real(2.d0*pi*tau(nl)*fi(fbin))),sin(real(2.d0*pi*tau(nl)*fi(fbin))))
                         ker_W0(nl,gbin,fbin,mubin,rbin) = ker_W0(nl,gbin,fbin,mubin,rbin) + real(dFe(nl))*cexp
                         ker_W1(nl,gbin,fbin,mubin,rbin) = ker_W1(nl,gbin,fbin,mubin,rbin) + &
-                                                          real(log(gsd(nl)))*real(dFe(nl))*cexp  
-                        !tbd redo these transfer functions                             
+                                                          real(log(gsd(nl)))*real(dFe(nl))*cexp
+                        !tbd redo these transfer functions
                         ker_W2(nl,gbin,fbin,mubin,rbin) = ker_W2(nl,gbin,fbin,mubin,rbin) + &
                                                           emisfac*normfac*cexp
                         ker_W3(nl,gbin,fbin,mubin,rbin) = ker_W3(nl,gbin,fbin,mubin,rbin) + &
@@ -374,8 +376,8 @@ subroutine rtrans(verbose,dset,nlp,spin,h,mu0,Gamma,rin,rout,rmin,honr,d,rnmax,z
                         !write(102,*)re,tau,log10( tau / tar(0) ) / dlogt
                         tbin = MAX( 1    , tbin )
                         tbin = MIN( tbin , nt   )
-                        ! kernel of the impulse response function              
-                        resp(gbin,tbin) = resp(gbin,tbin) + dFe(nl)  
+                        ! kernel of the impulse response function
+                        resp(gbin,tbin) = resp(gbin,tbin) + dFe(nl)
                     end if 
                 end do
             end if
