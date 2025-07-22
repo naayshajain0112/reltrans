@@ -21,6 +21,7 @@ subroutine getlens(a_spin,h,muobs,lens,delt,cosdelta1)
   double precision mua,p,phya,ra,sigmaa,timea,mudiff
   double precision par(3),x1,x2,xacc,mu2
   double precision alpha,beta,b2,d
+  integer          t_r1, t_r2
   external mudiff
 ! Settings
   scal      = 1.d0   !Meaningless scaling factor
@@ -59,7 +60,7 @@ subroutine getlens(a_spin,h,muobs,lens,delt,cosdelta1)
   ptotal = p_total(f1234(1),lambda,q,sins,mus,a_spin,h,scal)
   p = 0.9999d0 * ptotal
   call YNOGK(p,f1234,lambda,q,sins,mus,a_spin,h,scal,&
-       ra,mua,phya,timea,sigmaa)
+       ra,mua,phya,timea,sigmaa, t_r1, t_r2)
   !Calcluate the distance from BH to centre of observer's camera
   !For an on-axis lamppost, alpha should always be 0, but the below is general
   if( muobs .eq. 1.d0 )then
@@ -122,6 +123,7 @@ function cosidel(cosdelta,sins,mus,a_spin,h,velocity)
   double precision cosdelta,sins,mus,a_spin,h,velocity(3),cosidel
   double precision pr,pp,pt,lambda,q,f1234(4),ptotal
   double precision scal,p,ra,mua,phya,timea,sigmaa
+  integer          t_r1, t_r2
   scal = 1.d0                  !Meaningless scaling factor
   pr   = cosdelta              !cosdelta
   pp   = sqrt( 1.d0 - pr**2 )  !sindelta
@@ -132,7 +134,7 @@ function cosidel(cosdelta,sins,mus,a_spin,h,velocity)
   ptotal = p_total(f1234(1),lambda,q,sins,mus,a_spin,h,scal)
   p = 0.9999d0 * ptotal
   call YNOGK(p,f1234,lambda,q,sins,mus,a_spin,h,scal,&
-           ra,mua,phya,timea,sigmaa)
+           ra,mua,phya,timea,sigmaa, t_r1, t_r2)
   cosidel = mua
   return
 end function cosidel

@@ -111,14 +111,14 @@ end function dlgfac
 !-----------------------------------------------------------------------
 function dlgfac_inside_isco(a, mu0, alpha, beta, r, t_r)
 !c Calculates g-factor for a disk in the BH equatorial plane
-  use dyn_gr 
+  use isco 
   implicit none
-  double precision dlgfac_inside_isco,a,mu0, alpha, r, disco, beta
+  double precision dlgfac_inside_isco,a,mu0, alpha, r, beta
   double precision sin0,Delta
   double precision kr,vt,vr, vp
   double precision eis, jis
-  double precision lam, q 
-  integer t_r
+  double precision lam, q
+  integer          t_r
 
   vr = -(2./(3.*risco))**0.5 * (risco/r - 1.0)**1.5
   eis = (1. - 2./(3.*risco))**0.5
@@ -136,58 +136,12 @@ function dlgfac_inside_isco(a, mu0, alpha, beta, r, t_r)
   
   kr=(r**4.-(q+lam**2.-a**2.)*r**2.+2.*r*(q+(lam-a)**2.) - a**2.0*q)/Delta**2.0
 
-  dlgfac_isco=1/(+vt - (-1.0)**t_r * sqrt(kr)*vr - vp*lam)
+  dlgfac_inside_isco=1/(+vt - (-1.0)**t_r * sqrt(kr)*vr - vp*lam)
   
   return
 end function dlgfac_inside_isco
 !-----------------------------------------------------------------------
 
-
-!-----------------------------------------------------------------------
-function dglpfacthick(r,a,h,mu)
-! Calculates blue shift expreienced by a photon travelling from
-! an on-axis point source to a point on a Keplerian disk with constant
-! scaleheight (h/r=0 is mu=0)
-! Works for pro- and retrograde spins.
-  implicit none
-  double precision dglpfacthick,r,a,h,mu,gsd
-  double precision angvel,Dh,gphiphi,sindisk,mathcalA,Sig
-  angvel   = 1.0 / ( r**1.5 + abs(a) )
-  Dh       = h**2 - 2*h + a**2
-  sindisk  = sqrt( 1.d0 - mu**2 )
-  mathcalA = (r**2+a**2)**2 - (r**2-2.0*r+a**2)*a**2*sindisk
-  Sig      = r**2 + a**2 * mu**2
-  gphiphi  = mathcalA * sindisk**2 / Sig
-  if (r .ge. ISCO) then 
-     gsd = 1.0-2.0*r/Sig + 4.0*a*r*sindisk**2/Sig*angvel - gphiphi*angvel**2
-     gsd = Dh/(h**2+a**2) / gsd
-     gsd = sqrt( gsd )
-     dglpfacthick = gsd
-  else
-     call initialdirection(mus,sqrt(1-mus**2.0),0.d0,0.d0,1.d0,a,h,velocity ,lambda,q,f1234)
-     pcros = Pemdisk(f1234,lambda,q,0.d0,1.d0,a,h,1.d0,mu,1.d15,1.d0+sqrt(1.d0-a**2))
-!      qi2=sqrt(1-mus**2.0)*(h**2.0+a**2.0)**2.0/(h**2-2.0*h+a**2.0)-a**2.0
-     call YNOGK(pcros-1.d-5,f1234,lambda,q,0.d0,1.d0,a,h,1.d0,&
-          r1,mu1,phi1,t1,sigma1) 
-     call YNOGK(pcros,f1234,lambda,q,0.d0,1.d0,a,h,1.d0,&
-          r2,mu2,phi2,t2,sigma2) 
-     if(pcros.lt.0.d0)then
-        dglpfacthick=0.d0
-     else
-        vt1=vt(r,a)
-        vr1=vr(r,a)
-        kr=sqrt((r**2.0+a**2.0)**2.0-Delta*(q+a**2.0))/Delta
-        if ((r2-r1).lt.0.d0)then
-           dglpfacthick=-sqrt(Dh/(h**2+a**2))*(-vt1-kr*vr1)
-        else
-           dglpfacthick=-sqrt(Dh/(h**2+a**2))*(-vt1+kr*vr1)
-        endif
-     endif
-
-  endif
-  return
-end function dglpfacthick
-!-----------------------------------------------------------------------
 
 
 !-----------------------------------------------------------------------
@@ -223,6 +177,79 @@ function dlgfacthick(a,mu0,alpha,r,mu)
   return
 end function dlgfacthick
 !-----------------------------------------------------------------------
+
+
+!-----------------------------------------------------------------------
+function dglpfacthick(r,a,h,mu)
+! Calculates blue shift expreienced by a photon travelling from
+! an on-axis point source to a point on a Keplerian disk with constant
+! scaleheight (h/r=0 is mu=0)
+! Works for pro- and retrograde spins.
+  implicit none
+  double precision dglpfacthick,r,a,h,mu,gsd
+  double precision angvel,Dh,gphiphi,sindisk,mathcalA,Sig
+  angvel   = 1.0 / ( r**1.5 + abs(a) )
+  Dh       = h**2 - 2*h + a**2
+  sindisk  = sqrt( 1.d0 - mu**2 )
+  mathcalA = (r**2+a**2)**2 - (r**2-2.0*r+a**2)*a**2*sindisk
+  Sig      = r**2 + a**2 * mu**2
+  gphiphi  = mathcalA * sindisk**2 / Sig
+  gsd = 1.0-2.0*r/Sig + 4.0*a*r*sindisk**2/Sig*angvel - gphiphi*angvel**2
+  gsd = Dh/(h**2+a**2) / gsd
+  gsd = sqrt( gsd )
+  dglpfacthick = gsd
+return
+end function dglpfacthick
+!-----------------------------------------------------------------------
+
+
+! !-----------------------------------------------------------------------
+! function dglpfacthick(r,a,h,mu)
+! ! Calculates blue shift expreienced by a photon travelling from
+! ! an on-axis point source to a point on a Keplerian disk with constant
+! ! scaleheight (h/r=0 is mu=0)
+! ! Works for pro- and retrograde spins.
+!   implicit none
+!   double precision dglpfacthick,r,a,h,mu,gsd
+!   double precision angvel,Dh,gphiphi,sindisk,mathcalA,Sig
+!   angvel   = 1.0 / ( r**1.5 + abs(a) )
+!   Dh       = h**2 - 2*h + a**2
+!   sindisk  = sqrt( 1.d0 - mu**2 )
+!   mathcalA = (r**2+a**2)**2 - (r**2-2.0*r+a**2)*a**2*sindisk
+!   Sig      = r**2 + a**2 * mu**2
+!   gphiphi  = mathcalA * sindisk**2 / Sig
+!   if (r .ge. ISCO) then 
+!      gsd = 1.0-2.0*r/Sig + 4.0*a*r*sindisk**2/Sig*angvel - gphiphi*angvel**2
+!      gsd = Dh/(h**2+a**2) / gsd
+!      gsd = sqrt( gsd )
+!      dglpfacthick = gsd
+!   else
+!      call initialdirection(mus,sqrt(1-mus**2.0),0.d0,0.d0,1.d0,a,h,velocity ,lambda,q,f1234)
+!      pcros = Pemdisk(f1234,lambda,q,0.d0,1.d0,a,h,1.d0,mu,1.d15,1.d0+sqrt(1.d0-a**2))
+! !      qi2=sqrt(1-mus**2.0)*(h**2.0+a**2.0)**2.0/(h**2-2.0*h+a**2.0)-a**2.0
+!      call YNOGK(pcros-1.d-5,f1234,lambda,q,0.d0,1.d0,a,h,1.d0,&
+!           r1,mu1,phi1,t1,sigma1) 
+!      call YNOGK(pcros,f1234,lambda,q,0.d0,1.d0,a,h,1.d0,&
+!           r2,mu2,phi2,t2,sigma2) 
+!      if(pcros.lt.0.d0)then
+!         dglpfacthick=0.d0
+!      else
+!         vt1=vt(r,a)
+!         vr1=vr(r,a)
+!         kr=sqrt((r**2.0+a**2.0)**2.0-Delta*(q+a**2.0))/Delta
+!         if ((r2-r1).lt.0.d0)then
+!            dglpfacthick=-sqrt(Dh/(h**2+a**2))*(-vt1-kr*vr1)
+!         else
+!            dglpfacthick=-sqrt(Dh/(h**2+a**2))*(-vt1+kr*vr1)
+!         endif
+!      endif
+
+!   endif
+!   return
+! end function dglpfacthick
+! !-----------------------------------------------------------------------
+
+
 
 
 !-----------------------------------------------------------------------
@@ -288,38 +315,38 @@ end function dlgfacthick
       angular_momentum=((isco**0.5)*(1.0+((a**2.0)/(isco**2.0))-2.0*a/(isco**1.5)))/(sqrt(1.0-3.0/isco+2.0*a/(isco**1.5)))
       return
       end
-!-----------------------------------------------------------------------
-      function vt(r,a)
-      use isco_data
-      implicit none
-      double precision r,a
-      double precision Delta
-      double precision vt
-      Delta   = r**2 - 2*r + a**2
-      vt=(1.0/Delta)*((r**2.0+a**2.0+2.0*((a**2.0)/r))*KE-(2.0*a*AM/r))
-      return
-      end
-!-----------------------------------------------------------------------
-      function vr(r,a)
-      use isco_data
-      implicit none
-      double precision r,a
-      double precision vr
-      vr=(KE**2.0)-1.0+2.0/r+((a**2.0)*(KE**2.0-1.0)-AM**2.0)/(r**2.0)+(2.0*(AM-a*KE)**2.0)/(r**3.0)
-      if(vr.lt.0.d0)then
-      vr=0.d0
-      endif
-      vr=-sqrt(vr)
-      return
-      end
-!-----------------------------------------------------------------------
-      function vphi(r,a)
-      use isco_data
-      implicit none
-      double precision r,a
-      double precision Delta
-      double precision vphi
-      Delta   = r**2 - 2*r + a**2
-      vphi=(1.0/Delta)*((2.0*a*KE/r)+(1-2/r)*AM)
-      return
-      end
+! !-----------------------------------------------------------------------
+!       function vt(r,a)
+!       use isco_data
+!       implicit none
+!       double precision r,a
+!       double precision Delta
+!       double precision vt
+!       Delta   = r**2 - 2*r + a**2
+!       vt=(1.0/Delta)*((r**2.0+a**2.0+2.0*((a**2.0)/r))*KE-(2.0*a*AM/r))
+!       return
+!       end
+! !-----------------------------------------------------------------------
+!       function vr(r,a)
+!       use isco_data
+!       implicit none
+!       double precision r,a
+!       double precision vr
+!       vr=(KE**2.0)-1.0+2.0/r+((a**2.0)*(KE**2.0-1.0)-AM**2.0)/(r**2.0)+(2.0*(AM-a*KE)**2.0)/(r**3.0)
+!       if(vr.lt.0.d0)then
+!       vr=0.d0
+!       endif
+!       vr=-sqrt(vr)
+!       return
+!       end
+! !-----------------------------------------------------------------------
+!       function vphi(r,a)
+!       use isco_data
+!       implicit none
+!       double precision r,a
+!       double precision Delta
+!       double precision vphi
+!       Delta   = r**2 - 2*r + a**2
+!       vphi=(1.0/Delta)*((2.0*a*KE/r)+(1-2/r)*AM)
+!       return
+!       end

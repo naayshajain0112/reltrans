@@ -45,11 +45,16 @@ MODULE dyn_gr
     integer, parameter :: ndelta = 1000
     integer         , dimension(:)  , allocatable :: npts
     integer         , dimension(:,:), allocatable :: t_r
-    double precision                              :: rh, risco, rmin
+    double precision                              :: rh, rmin
     double precision, dimension(:,:), allocatable :: re1,taudo1,pem1
     double precision, dimension(:,:), allocatable :: dcosdr, cosd, rlp, tlp
     save status_re_tau
 END MODULE dyn_gr
+
+module isco
+  implicit none
+  double precision :: risco
+end module isco
 
 module xillver_tables
     implicit none 

@@ -3,6 +3,7 @@ subroutine set_param(Cp,dset,param,nlp,h,a,inc,rin,rout,zcos,Gamma,logxi,Dkpc,Af
                      g,Anorm,resp,refvar,verbose)
 !!! Sets the parameters of reltrans depending on the Cp variable
   use dyn_gr
+  use isco
   implicit none
   integer         , intent(in)   :: Cp, dset, nlp, verbose
   real            , intent(in)   :: param(32)
@@ -13,29 +14,7 @@ subroutine set_param(Cp,dset,param,nlp,h,a,inc,rin,rout,zcos,Gamma,logxi,Dkpc,Af
   real            , intent(out)  :: DelA, DelAB(nlp), g(nlp), Anorm, Dkpc
   integer         , intent(out)  :: ReIm, resp, refvar
   integer m
-
-!Check the inner radius and the heigh of the source 
-    !Set minimum r  and convert rin and h to rg
-    rh     = 1.d0+sqrt(1.d0-a**2)
-    if( abs(a) .gt. 0.999 ) a = sign(a,1.d0) * 0.999
-    ! rmin   = disco( a )
-    risco = disco(a)
-    if( rin .lt. 0.d0 ) rin = abs(rin) * risco
-    rmin = rh + 0.0001
-    if( rin .lt. rmin )then
-        write(*,*)"Warning! rin < Event Horizon! Set to the Event Horizon (+0.0001Rg)"
-        rin = rmin
-    end if
-    do m=1,nlp 
-        if( h(m) .lt. 0.d0 ) h(m) = abs(h(m)) * rh
-        if( verbose .gt. 0 ) write(*,*)"h (Rg)=",h(m)
-        if( h(m) .lt. 1.5d0*rh )then
-            write(*,*)"Warning! h<1.5*rh! Set to 1.5*rh"
-            h(m) = 1.5d0 * rh
-        end if 
-    end do
-    if( verbose .gt. 0 ) write(*,*)"rin (Rg)=",rin
-
+  double precision               :: disco
 
   !TBD: DelAB, g also arryas of size nlp 
 ! Read in basic parameter array   
@@ -82,6 +61,36 @@ subroutine set_param(Cp,dset,param,nlp,h,a,inc,rin,rout,zcos,Gamma,logxi,Dkpc,Af
   else
      Dkpc = 0.0
   end if
+
+  !Check the inner radius and the heigh of the source 
+    !Set minimum r  and convert rin and h to rg
+    rh     = 1.d0+sqrt(1.d0-a**2)
+    write(*,*) 'parameters'
+    if( abs(a) .gt. 0.999 ) a = sign(a,1.d0) * 0.999
+    ! rmin   = disco( a )
+    risco = disco(a)       
+    if( rin .lt. 0.d0 ) rin = abs(rin) * risco
+    rmin = rh + 0.0001
+    if( rin .lt. rmin )then
+        write(*,*)"Warning! rin < Event Horizon! Set to the Event Horizon (+0.0001Rg)"
+        rin = rmin
+    end if
+    do m=1,nlp 
+        if( h(m) .lt. 0.d0 ) h(m) = abs(h(m)) * rh
+
+    if( verbose .gt. 0 ) then
+       write(*,*) "isco  = ",risco
+       write(*,*) "Event horizon = ", rh
+       write(*,*) "Minimum radius alloweded = ", rmin
+       write(*,*) "h (Rg) = ",h(m)
+    endif
+
+        if( h(m) .lt. 1.5d0*rh )then
+            write(*,*)"Warning! h<1.5*rh! Set to 1.5*rh"
+            h(m) = 1.5d0 * rh
+        end if 
+    end do
+    if( verbose .gt. 0 ) write(*,*)"rin (Rg)=",rin
 
   return
 end subroutine set_param

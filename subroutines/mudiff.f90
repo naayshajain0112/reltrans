@@ -10,6 +10,7 @@ function mudiff(cosdelta,par)
     double precision velocity(3),sindelta,pp,pr,pt,lambda,q,f1234(4)
     double precision ptotal,x,y,z,xprev,yprev,zprev,delx,dely,delz
     double precision ra,mua,phya,timea,sigmaa,p,cosdum
+    integer          t_r1, t_r2
     a_spin = par(1)
     h      = par(2)
     muobs  = par(3)
@@ -30,13 +31,13 @@ function mudiff(cosdelta,par)
         ptotal = p_total(f1234(1),lambda,q,sins,mus,a_spin,h,scal)
         p = 0.9998d0 * ptotal
         call YNOGK(p,f1234,lambda,q,sins,mus,a_spin,h,scal,&
-                   ra,mua,phya,timea,sigmaa)
+                   ra,mua,phya,timea,sigmaa, t_r1, t_r2)
         xprev = sqrt(ra**2+a_spin**2)*sqrt(1.d0-mua**2)*cos(phya)
         yprev = sqrt(ra**2+a_spin**2)*sqrt(1.d0-mua**2)*sin(phya)
         zprev = ra*mua
         p = 0.9999d0 * ptotal
         call YNOGK(p,f1234,lambda,q,sins,mus,a_spin,h,scal,&
-                   ra,mua,phya,timea,sigmaa)
+                   ra,mua,phya,timea,sigmaa, t_r1, t_r2)
         x = sqrt(ra**2+a_spin**2)*sqrt(1.d0-mua**2)*cos(phya)
         y = sqrt(ra**2+a_spin**2)*sqrt(1.d0-mua**2)*sin(phya)
         z = ra*mua

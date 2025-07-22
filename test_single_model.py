@@ -7,7 +7,7 @@ import os
 
 #-----------------------------#
 #set env variables for tests
-os.environ["REV_VERB" ] = "2"
+os.environ["REV_VERB" ] = "1"
 os.environ["TEST_RUN" ] = "0"
 os.environ["MU_ZONES" ] = "1"
 os.environ["ION_ZONES"] = "1"
@@ -38,7 +38,7 @@ param = np.zeros(21, dtype = np.float32)
 param[0]  = 6.0     #h     !Source height **-ve means in units of BH horizon, +ve means in Rg***
 param[1]  = 0.998   #a     !BH spin
 param[2]  = 30.0    #inc   !Inclination angle in degrees
-param[3]  = -1.0    #rin   !Disk inner radius **-ve means in units of ISCO, +ve means in Rg***
+param[3]  = 1.01    #rin   !Disk inner radius **-ve means in units of ISCO, +ve means in Rg***
 param[4]  = 1e3     #rout  !Disk outer radius in Rg - will probably hardwire this
 param[5]  = 0.0     #zcos  !Cosmological redshift
 param[6]  = 2.0     #Gamma !Photon index
@@ -56,66 +56,41 @@ param[17] = 0.0     #DelA
 param[18] = 0.0     #DelAB
 param[19] = 0.0     #gamma
 param[20] = 1       #telescope response  
-# param[0]  = 29.7014      #h     !Source height **-ve means in units of BH horizon, +ve means in Rg***
-# param[1]  = 0.5          #a     !BH spin
-# param[2]  = 44.2792      #inc   !Inclination angle in degrees
-# param[3]  = -1           #rin   !Disk inner radius **-ve means in units of ISCO, +ve means in Rg***
-# param[4]  = 1000         #rout  !Disk outer radius in Rg - will probably hardwire this
-# param[5]  = 0            #zcos  !Cosmological redshift
-# param[6]  = 1.79279      #Gamma !Photon index
-# param[7]  = 1.44735      #logxi !log10xi - ionisation parameter
-# param[8]  = 1            #Afe   !Iron abundance      
-# param[9]  = 19.9874      #kTe   !Electron temperature ***IN OBSERVER'S RESTFRAME***
-# param[10] = 60           #kTe   !Electron temperature ***IN OBSERVER'S RESTFRAME***
-# param[11] = 0.0          #Nh
-# param[12] = 1            #1onB  !(1/\mathcal{B}): boosting fudge factor that lowers normalisation of reflection spectrum
-# param[13] = 10           #M     !BH mass in solar masses
-# param[14] = 0.12207      #flo   !Lowest frequency in band (Hz)
-# param[15] = 0.24414      #fhi   !Highest frequency in band (Hz)
-# param[16] = 4            #ReIm  !1=Re, 2=Im, 3=modulus, 4=time lag (s), 5=folded modulus, 6=folded time lag (s)
-# param[17] = -0.0166535   #DelA
-# param[18] = -0.686551    #DelAB
-# param[19] = 0.15228      #gamma
-# param[20] = 1            #telescope response
               
 
-plt.ion()
-print('')
-print('')
-print('')
-print('---------------------------------------------------------')
-# name_input = './Benchmarks/xrb/ip_0,12_0,25.dat'
-# name_input = './Benchmarks/test_parametes2.dat'
-model_type = 'xrb'
-# name_input = './Benchmarks/test_par_rtdist.dat'
-# model_type = 'rtdist'
+print()
+print()
+print()
+model_type = 'reltransDCp'
 
-
-# print (f'reading input parameters in {name_input} file ')
-# parameters = np.genfromtxt(name_input, dtype = np.float32)
 parameters = param
-print('')            
 print('*********************************************************')
-print(f'running model for {model_type}  mode')
+print('Start runnign reltrans')            
 
-# parameters = np.array([6,0.9,57,-2,2e4,0.024917,2.5,1e5,1,17,50.,5e-2,1,3e6,0.02,0,0,0,0,0,0,-0.8,0.3,2.2e-4,1,1.])
 
 
 match model_type:
-    case 'xrb':
+    case 'reltransDCp':
         photar_test = ib.reltransDCp(ear, parameters)
         # photar_test = ib.reltransPL(ear, parameters)
-    case 'dbl':
+    case 'rtransDbl':
         photar_test = ib.reltransDbl(ear, parameters)
     case 'rtdist':
         photar_test = ib.rtdist(ear, parameters)
 
-print('')
-print('')
-print('')
+print()
+print()
+print()
 print('RELTRANS finished!')
 print('*********************************************************')
-print('')
+print()
+
+with open ('test_final_model.txt', 'w') as out:
+    E = (ear[1:] + ear[:-1]) * 0.5 
+    for i, phot in enumerate(photar_test):
+        out.writelines(str(E[i]) + ' ' + str(phot) + '\n')
+
+plt.ion()
 # #Print the two models 
 fig, ax = plt.subplots(1, 1, figsize=(10, 8))
 font = 20
@@ -132,7 +107,7 @@ for axis in ['top','bottom','left','right']:
 ax.yaxis.set_ticks_position('both')
 ax.legend(fontsize = 10)
 
-# print(photar_test)
+print(photar_test)
 
             # E = (ear[1:] + ear[:-1]) * 0.5 
             # dE = (ear[1:] - ear[:-1])

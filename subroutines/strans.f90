@@ -33,6 +33,7 @@ subroutine rtrans(verbose,dset,nlp,spin,h,mu0,Gamma,rin,rout,honr,d,rnmax,zcos,b
     ! frrel                 Reflection fraction defined by relxilllp
     ! lens                  Lensing factor for direct emission * 4pi p(theta0,phi0)
     use dyn_gr
+    use isco 
     use blcoordinate
     use radial_grids
     use gr_continuum
@@ -45,12 +46,12 @@ subroutine rtrans(verbose,dset,nlp,spin,h,mu0,Gamma,rin,rout,honr,d,rnmax,zcos,b
     complex cexp!,transe(0:nlp,ne,nf,me,xe),transe_a(nlp,ne,nf,me,xe)
 
     integer i,j,odisc,n,gbin,rbin,mubin,l,m,k,nl
-    double precision domega(nro),d,taudo,g,dlgfacthick,dFe(nlp),newtex,contx_int(nlp)
+    double precision domega(nro),d,taudo,g,dlgfacthick,dlgfac, dlgfac_inside_isco,dFe(nlp),newtex,contx_int(nlp)
     !double precision rlp_column(ndelta),dcosdr_column(ndelta),tlp_column(ndelta),cosd_column(ndelta)
     double precision alpha,beta,cos0,sin0,phie,re,gsd(nlp)
     double precision tau(nlp),tausd,emissivity(nlp),cosfac,dglpfacthick,dareafac
     integer kk,fbin,get_index
-    double precision rmin,disco,rfunc,scal,velocity(3),mudisk,sysfref
+    double precision rfunc,scal,velocity(3),mudisk,sysfref
     double precision rnmax,rnmin,rn(nro),phin,mueff,dlogr,interper
     double precision fi(nf),dgsofac,sindisk,mue,demang,frobs(nlp),cosdin,frrel(nlp)
     double precision pnormer,mus,ptf,pfunc_raw,ang_fac
@@ -145,7 +146,7 @@ subroutine rtrans(verbose,dset,nlp,spin,h,mu0,Gamma,rin,rout,honr,d,rnmax,zcos,b
         if( abs(routsav-rout)  .gt. tiny(rout)   ) dotrace = .true.
         if( abs(mudsav-mudisk) .gt. tiny(mudisk) ) dotrace = .true.         
         if( dotrace )then
-            call GRtrace(nro,nphi,rn,mueff,mu0,spin,rmin,rout,mudisk,d)
+            call GRtrace(nro,nphi,rn,mueff,mu0,spin,rout,mudisk,d)
             spinsav = spin
             musav   = mu0
             routsav = rout
@@ -196,8 +197,9 @@ subroutine rtrans(verbose,dset,nlp,spin,h,mu0,Gamma,rin,rout,honr,d,rnmax,zcos,b
                     odisc = 1
                     do m=1,nlp
                        taudo = taudo1(j,i)
-                       if (re .gt. risco) g = dlgfac(a,mu0,alpha,re)
-                       if (re .gt. rmin .and. re .lt. risco) g = dlgfac_inside_isco(a, mu0, alpha, beta, re, t_r(j,i))
+                       if (re .gt. risco) g = dlgfac(spin,mu0,alpha,re)
+                       if (re .gt. rmin .and. re .lt. risco) g = dlgfac_inside_isco(spin, mu0, alpha, beta, re, t_r(j,i))
+                       write(10,*) re, rn(i), phin, g
                         ! g = dlgfacthick(spin,mu0,alpha,re,mudisk) !disk to observer g factor
                         gsd(m) = dglpfacthick(re,spin,h(m),mudisk) !source to disk g factor
                         !Find the rlp bin that corresponds to re
