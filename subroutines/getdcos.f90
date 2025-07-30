@@ -1,5 +1,5 @@
 !*****************************************************************************************************
-subroutine getdcos(a_spin,h,mudisk,n,nlp,rout,npts,r1,dcosdr,tc,cosd1,cosdout)
+subroutine getdcos(a_spin,h,mudisk,n,nlp,rout,r1,tc,cosd1,cosdout)
     ! INPUTS
     ! a_spin       Dimensionless spin parameter
     ! h            Height of on-axis, isotropically emitting source
@@ -8,41 +8,44 @@ subroutine getdcos(a_spin,h,mudisk,n,nlp,rout,npts,r1,dcosdr,tc,cosd1,cosdout)
     ! rout         Disk outer radius
 
     ! OUTPUTS
-    ! npts         Number of points recorded in arrays (leq n, since some trial values will not hit the disk)
     ! r1(n)        Radius of disk crossing
-    ! dcosdr(n)    Corresponding d\cos\delta/dr
     ! tc(n)        Corresponding time coordinate
     ! cosd1(n)     Corresponding \cos\delta
     ! cosdout      cosd at the outer disk radius 
+
+    ! SETTING VALUES IN MODULES 
+    ! npts         Number of points recorded in arrays (leq n, since some trial values will not hit the disk)
+    ! dcosdr(n)    Corresponding d\cos\delta/dr
     !        
     ! For n values of the emission angle, delta, the code calculates the r and t coordinates
     ! for the geodesic for mu=mudisk; i.e. the crossing points of a thin disk.
     ! Note that mudisk = (h/r) / sqrt( (h/r)**2 + 1 )
-    use blcoordinate
+  use blcoordinate
+  use dyn_gr
+  use isco
     implicit none
     double precision sins,mus,a_spin,h(nlp),lambda,q,scal,mudisk
     double precision rhorizon,velocity(3),f1234(4),pp,pr,pt
     double precision deltamin,deltamax,rout,cosdout(nlp)
-    integer  m,j,n,k,counter,nlp,npts(nlp),nout(nlp), t_r1, t_r2
-    double precision r1(n,nlp)
-    double precision dcosdr(n,nlp),tc(n,nlp)
-    double precision deltas,cosd1(n,nlp),r_min,r_max,disco
+    integer  m,j,n,k,counter,nlp,nout(nlp), t_r1, t_r2
+    double precision r1(n,nlp), tc(n,nlp)
+    double precision deltas,cosd1(n,nlp),r_min,r_max
     double precision rcros,mucros,phicros,tcros,sigmacros,pcros
     !      double precision cosphi,costheta,d1(n),sinphi,sintheta
     scal     = 1.d0   !Meaningless scaling factor
     mus      = 1.d0   !Position of source: mus=0 means on-axis
     sins     = 0.d0   !sin of same angle
     velocity = 0.0D0  !3-velocity of source
-    rhorizon = one+sqrt(one-a_spin**2)
 
     !loop over h here
     do m=1,nlp
         !Calculate smallest delta worth considering
-        deltamin = acos( h(m) / sqrt( h(m)**2 + rhorizon**2 ) )
+        deltamin = acos( h(m) / sqrt( h(m)**2 + rh**2 ) )
         !Consider arbitrarily large value of delta
         deltamax = pi
         !Set minimum and maximum disk radii
-        r_min = disco( a_spin )
+        ! r_min = disco( a_spin )
+        r_min = rh
         r_max = 1d10
         !Go through n different values of the angle delta_s
         counter = 0
@@ -60,8 +63,8 @@ subroutine getdcos(a_spin,h,mudisk,n,nlp,rout,npts,r1,dcosdr,tc,cosd1,cosdout)
             pcros = Pemdisk(f1234,lambda,q,sins,mus,a_spin,h(m),scal,mudisk,r_max,r_min)
             !From that, calculate r, phi and t at mu=0
             call YNOGK(pcros,f1234,lambda,q,sins,mus,a_spin,h(m),scal,rcros,mucros,phicros,tcros,sigmacros, t_r1, t_r2)
+            write(31,*) deltas, pr, rcros
             if( pcros .gt. 0.0 )then
-                !write(88,*)rcros,pr
                 counter        = counter + 1
                 r1(counter,m)    = rcros
                 cosd1(counter,m) = pr    !cosdelta

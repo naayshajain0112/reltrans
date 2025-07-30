@@ -68,7 +68,8 @@ subroutine set_param(Cp,dset,param,nlp,h,a,inc,rin,rout,zcos,Gamma,logxi,Dkpc,Af
     write(*,*) 'parameters'
     if( abs(a) .gt. 0.999 ) a = sign(a,1.d0) * 0.999
     ! rmin   = disco( a )
-    risco = disco(a)       
+    risco = disco(a)
+    call isco_KE_AM(a)
     if( rin .lt. 0.d0 ) rin = abs(rin) * risco
     rmin = rh + 0.0001
     if( rin .lt. rmin )then

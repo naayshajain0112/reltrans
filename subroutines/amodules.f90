@@ -54,6 +54,15 @@ END MODULE dyn_gr
 module isco
   implicit none
   double precision :: risco
+  double precision :: e_isco, j_isco
+contains
+  subroutine isco_KE_AM(a)
+    !this subtoutine is called in set_param where risco is defined
+    implicit none
+    double precision a
+    e_isco = (1. - 2./(3.*risco))**0.5
+    j_isco = 2. * 3.**0.5 * (1 - 2.*a/(3.*risco**0.5))
+  end subroutine isco_KE_AM
 end module isco
 
 module xillver_tables

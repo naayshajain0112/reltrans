@@ -41,9 +41,9 @@
 ! Calculates dA/dr, where A is the surface area of a disk ring
 ! *ADJUSTED FOR ORBITAL MOTION* BY MULTIPLYING BY THE LORENTZ FACTOR
       implicit none
-      double precision dareafac,r,a
-      double precision Dm,dArbydr,pi,dlorfac
-      pi = acos(-1.0)
+      double precision               dareafac,r,a
+      double precision               Dm,dArbydr,dlorfac
+      double precision, parameter :: pi = acos(-1.0)
       Dm     = r**2 - 2*r + a**2
       dArbydr = ( r**4+a**2*r**2+2*a**2*r ) / Dm
       dArbydr = 2*pi*sqrt(dArbydr)
@@ -110,24 +110,23 @@ end function dlgfac
 
 !-----------------------------------------------------------------------
 function dlgfac_inside_isco(a, mu0, alpha, beta, r, t_r)
-!c Calculates g-factor for a disk in the BH equatorial plane
+  !c Calculates g-factor for a disk in the BH equatorial plane
+  ! imported from Andy's mummary code
   use isco 
   implicit none
   double precision dlgfac_inside_isco,a,mu0, alpha, r, beta
   double precision sin0,Delta
-  double precision kr,vt,vr, vp
+  double precision kr, vt_, vr_, vp_, vt, vr, vphi
   double precision eis, jis
   double precision lam, q
   integer          t_r
 
-  vr = -(2./(3.*risco))**0.5 * (risco/r - 1.0)**1.5
-  eis = (1. - 2./(3.*risco))**0.5
-  jis = 2. * 3.**0.5 * (1 - 2.*a/(3.*risco**0.5))
-
   Delta  = r**2. - 2.*r + a**2.0
-
-  vp = (2*eis*a + jis*(r-2))/(r*(r**2.0-2.*r+a**2.0))
-  vt = (eis*(r**3.0 + r * a**2.0 + 2.0 * a**2.0) - 2.0*jis*a)/(r*(r**2.0-2.*r+a**2.0))
+  ! eis = (1. - 2./(3.*risco))**0.5
+  ! jis = 2. * 3.**0.5 * (1 - 2.*a/(3.*risco**0.5))
+  vt_ = vt(r,a) 
+  vr_ = vr(r) 
+  vp_ = vphi(r,a)
 
   sin0   = sqrt( 1.0 - mu0**2 )
   lam = -alpha * sin0
@@ -136,18 +135,55 @@ function dlgfac_inside_isco(a, mu0, alpha, beta, r, t_r)
   
   kr=(r**4.-(q+lam**2.-a**2.)*r**2.+2.*r*(q+(lam-a)**2.) - a**2.0*q)/Delta**2.0
 
-  dlgfac_inside_isco=1/(+vt - (-1.0)**t_r * sqrt(kr)*vr - vp*lam)
+  dlgfac_inside_isco=1/(+vt_ - (-1.0)**t_r * sqrt(kr) * vr_ - vp_*lam)
   
   return
 end function dlgfac_inside_isco
 !-----------------------------------------------------------------------
 
 
+!-----------------------------------------------------------------------
+function vt(r,a)
+  !compute the time-like of the 4-velocity of the disk element
+  use isco
+  implicit none
+  double precision, intent(IN) :: r, a
+  double precision             :: vt
+  vt = (e_isco*(r**3.0 + r * a**2.0 + 2.0 * a**2.0) -&
+       2.0 * j_isco * a) / (r * (r**2.0 - 2. * r + a**2.0))
+end function vt
+!-----------------------------------------------------------------------
+
+
+!-----------------------------------------------------------------------
+function vr(r)
+  !compute the radial component of the 4-velocity of the disk element
+  use isco
+  implicit none
+  double precision, intent(IN) :: r
+  double precision             :: vr
+  vr = -(2./(3.*risco))**0.5 * (risco/r - 1.0)**1.5
+end function vr
+!-----------------------------------------------------------------------
+
+
+!-----------------------------------------------------------------------
+function vphi(r,a)
+  !compute the phi component of the 4-velocity of the disk element
+  use isco
+  implicit none
+  double precision, intent(IN) :: r, a
+  double precision             :: vphi
+  vphi = (2 * e_isco * a + j_isco * (r - 2) ) / (r * (r**2.0 - 2.* r + a**2.0))
+end function vphi
+!-----------------------------------------------------------------------
+
 
 !-----------------------------------------------------------------------
 function dlgfacthick(a,mu0,alpha,r,mu)
 ! Calculates g-factor for a photon travelling from disc to observer.
-! Disc has constant mu.
+  ! Disc has constant mu.
+  !NOTE: this unction is used only in the Newtonian loop 
   implicit none
   double precision dlgfacthick,a,mu0,alpha,r,mu
   double precision sin0,sindisk,angvel,mathcalA,Delta,Sig
@@ -179,30 +215,6 @@ end function dlgfacthick
 !-----------------------------------------------------------------------
 
 
-!-----------------------------------------------------------------------
-function dglpfacthick(r,a,h,mu)
-! Calculates blue shift expreienced by a photon travelling from
-! an on-axis point source to a point on a Keplerian disk with constant
-! scaleheight (h/r=0 is mu=0)
-! Works for pro- and retrograde spins.
-  implicit none
-  double precision dglpfacthick,r,a,h,mu,gsd
-  double precision angvel,Dh,gphiphi,sindisk,mathcalA,Sig
-  angvel   = 1.0 / ( r**1.5 + abs(a) )
-  Dh       = h**2 - 2*h + a**2
-  sindisk  = sqrt( 1.d0 - mu**2 )
-  mathcalA = (r**2+a**2)**2 - (r**2-2.0*r+a**2)*a**2*sindisk
-  Sig      = r**2 + a**2 * mu**2
-  gphiphi  = mathcalA * sindisk**2 / Sig
-  gsd = 1.0-2.0*r/Sig + 4.0*a*r*sindisk**2/Sig*angvel - gphiphi*angvel**2
-  gsd = Dh/(h**2+a**2) / gsd
-  gsd = sqrt( gsd )
-  dglpfacthick = gsd
-return
-end function dglpfacthick
-!-----------------------------------------------------------------------
-
-
 ! !-----------------------------------------------------------------------
 ! function dglpfacthick(r,a,h,mu)
 ! ! Calculates blue shift expreienced by a photon travelling from
@@ -218,38 +230,80 @@ end function dglpfacthick
 !   mathcalA = (r**2+a**2)**2 - (r**2-2.0*r+a**2)*a**2*sindisk
 !   Sig      = r**2 + a**2 * mu**2
 !   gphiphi  = mathcalA * sindisk**2 / Sig
-!   if (r .ge. ISCO) then 
-!      gsd = 1.0-2.0*r/Sig + 4.0*a*r*sindisk**2/Sig*angvel - gphiphi*angvel**2
-!      gsd = Dh/(h**2+a**2) / gsd
-!      gsd = sqrt( gsd )
-!      dglpfacthick = gsd
-!   else
-!      call initialdirection(mus,sqrt(1-mus**2.0),0.d0,0.d0,1.d0,a,h,velocity ,lambda,q,f1234)
-!      pcros = Pemdisk(f1234,lambda,q,0.d0,1.d0,a,h,1.d0,mu,1.d15,1.d0+sqrt(1.d0-a**2))
-! !      qi2=sqrt(1-mus**2.0)*(h**2.0+a**2.0)**2.0/(h**2-2.0*h+a**2.0)-a**2.0
-!      call YNOGK(pcros-1.d-5,f1234,lambda,q,0.d0,1.d0,a,h,1.d0,&
-!           r1,mu1,phi1,t1,sigma1) 
-!      call YNOGK(pcros,f1234,lambda,q,0.d0,1.d0,a,h,1.d0,&
-!           r2,mu2,phi2,t2,sigma2) 
-!      if(pcros.lt.0.d0)then
-!         dglpfacthick=0.d0
-!      else
-!         vt1=vt(r,a)
-!         vr1=vr(r,a)
-!         kr=sqrt((r**2.0+a**2.0)**2.0-Delta*(q+a**2.0))/Delta
-!         if ((r2-r1).lt.0.d0)then
-!            dglpfacthick=-sqrt(Dh/(h**2+a**2))*(-vt1-kr*vr1)
-!         else
-!            dglpfacthick=-sqrt(Dh/(h**2+a**2))*(-vt1+kr*vr1)
-!         endif
-!      endif
-
-!   endif
-!   return
+!   gsd = 1.0-2.0*r/Sig + 4.0*a*r*sindisk**2/Sig*angvel - gphiphi*angvel**2
+!   gsd = Dh/(h**2+a**2) / gsd
+!   gsd = sqrt( gsd )
+!   dglpfacthick = gsd
+! return
 ! end function dglpfacthick
 ! !-----------------------------------------------------------------------
 
 
+!-----------------------------------------------------------------------
+function dglpfacthick(r,a,h,mudisk,cosdelta)
+! Calculates blue shift expreienced by a photon travelling from
+! an on-axis point source to a point on a Keplerian disk with constant
+! scaleheight (h/r=0 is mu=0)
+! Works for pro- and retrograde spins.
+  use blcoordinate
+  use isco
+  implicit none
+  double precision, intent(in) :: r, a, h, mudisk, cosdelta
+  double precision dglpfacthick,gsd
+  double precision angvel,Dh,sindisk,mathcalA,Sig,Delta,gphiphi
+  double precision kr,vt_,vr_,vt,vr,lambda,q,f1234(4),velocity(3),pcros
+  double precision r1,mu1,phi1,t1,sigma1
+  double precision r2,mu2,phi2,t2,sigma2
+  double precision pr, pp, pt
+  integer          t_r1, t_r2
+
+  Dh = h**2 - 2*h + a**2
+  if(r .ge. risco) then
+     sindisk  = sqrt( 1.d0 - mudisk**2 )
+     Sig      = r**2 + a**2 * mudisk**2
+     mathcalA = (r**2+a**2)**2 - (r**2-2.0*r+a**2)*a**2*sindisk**2
+     gphiphi  = mathcalA * sindisk**2 / Sig
+     angvel   = 1.0 / ( r**1.5 + a )
+     gsd = 1.0-2.0*r/Sig + 4.0*a*r*sindisk**2/Sig*angvel - gphiphi*angvel**2
+     gsd = Dh/(h**2+a**2) / gsd
+     gsd = sqrt( gsd )
+     dglpfacthick = gsd
+     !            write(156,*) r,gsd,"out"
+  else
+     Delta  = r**2. - 2.*r + a**2.0
+     velocity = 0.0D0
+     pr = cosdelta
+     pt = 0.d0
+     pp = sqrt(1 - cosdelta**2)
+     call initialdirection(pr,pt,pp,0.d0,1.d0,a,h,velocity,lambda,q,f1234)
+     pcros = Pemdisk(f1234,lambda,q,0.d0,1.d0,a,h,1.d0,mudisk,1.d15,1.d0+sqrt(1.d0-a**2))
+     call YNOGK(pcros-1.d-5,f1234,lambda,q,0.d0,1.d0,a,h,1.d0,&
+          r1,mu1,phi1,t1,sigma1, t_r1, t_r2) 
+     call YNOGK(pcros,f1234,lambda,q,0.d0,1.d0,a,h,1.d0,&
+          r2,mu2,phi2,t2,sigma2, t_r1, t_r2) 
+     if(pcros.lt.0.d0)then
+        dglpfacthick=0.d0
+     else
+        vt_ = vt(r,a)
+        vr_ = vr(r)
+        ! kr = sqrt(r**4. - (q + lam**2. - a**2.) * r**2. + &
+        !      2. * r * (q + (lam - a)**2.) - a**2.0 * q) / Delta
+        !which is equivalent to the power of 2 of the following 
+        kr = sqrt( (r**2.0 + a**2.0)**2.0 - Delta * (q + a**2.0) )/ Delta
+        write(40,*) t_r1, (r2-r1)
+        if ((r2-r1).lt.0.d0)then
+           dglpfacthick=-sqrt(Dh / (h**2 + a**2) )*(-vt_ - kr * vr_)
+        else
+           dglpfacthick=-sqrt(Dh / (h**2 + a**2) )*(-vt_ + kr * vr_)
+        endif
+     endif
+  endif
+  ! write(1003,*)r,dglpfacthick
+  return
+!  dlgfac_inside_isco=1/(+_vt - (-1.0)**t_r * sqrt(kr)*_vr - _vp*lam)
+
+end function dglpfacthick
+!-----------------------------------------------------------------------
 
 
 !-----------------------------------------------------------------------
@@ -266,87 +320,64 @@ end function dglpfacthick
       end
 !-----------------------------------------------------------------------
 
-
     
-!-----------------------------------------------------------------------
-      function lorfac(r,a)
-! Calculates Lorentz factor for rotating disk element
-      implicit none
-      real lorfac,r,a
-      real Delta,BigA,Omega,v
-      Delta  = r**2 - 2*r + a**2
-      BigA   = (r**2+a**2)**2 - a**2*Delta
-      Omega  = 1.0 / ( r**1.5 + abs(a) )
-      v      = ( Omega * bigA - 2*a*r ) / ( r**2 * sqrt(Delta) )
-      lorfac = ( 1 - v**2 )**(-0.5)
-      return
-      end
-!-----------------------------------------------------------------------
+! !-----------------------------------------------------------------------
+!       function lorfac(r,a)
+! ! Calculates Lorentz factor for rotating disk element
+!       implicit none
+!       real lorfac,r,a
+!       real Delta,BigA,Omega,v
+!       Delta  = r**2 - 2*r + a**2
+!       BigA   = (r**2+a**2)**2 - a**2*Delta
+!       Omega  = 1.0 / ( r**1.5 + abs(a) )
+!       v      = ( Omega * bigA - 2*a*r ) / ( r**2 * sqrt(Delta) )
+!       lorfac = ( 1 - v**2 )**(-0.5)
+!       return
+!       end
+! !-----------------------------------------------------------------------
 
+      
+! !-----------------------------------------------------------------------
+! function Delta(r,a)
+!   implicit none
+!   double precision Delta, r, a
+!   Delta    = r**2 - 2*r + a**2
+! end function Delta
+! !-----------------------------------------------------------------------
+
+
+! !-----------------------------------------------------------------------
+!       function dlorfac(r,a)
+! ! Calculates Lorentz factor for rotating disk element
+!       implicit none
+!       double precision dlorfac,r,a
+!       double precision Delta,BigA,Omega,v
+!       Delta   = r**2 - 2*r + a**2
+!       BigA    = (r**2+a**2)**2 - a**2*Delta
+!       Omega   = 1.0 / ( r**1.5 + abs(a) )
+!       v       = ( Omega * bigA - 2*a*r ) / ( r**2 * sqrt(Delta) )
+!       dlorfac = ( 1 - v**2 )**(-0.5)
+!       return
+!       end
+! !-----------------------------------------------------------------------
       
 !-----------------------------------------------------------------------
       function dlorfac(r,a)
 ! Calculates Lorentz factor for rotating disk element
+      use isco
       implicit none
       double precision dlorfac,r,a
-      double precision Delta,BigA,Omega,v
+      double precision Delta, BigA, vt_, vt
       Delta   = r**2 - 2*r + a**2
       BigA    = (r**2+a**2)**2 - a**2*Delta
-      Omega   = 1.0 / ( r**1.5 + abs(a) )
-      v       = ( Omega * bigA - 2*a*r ) / ( r**2 * sqrt(Delta) )
-      dlorfac = ( 1 - v**2 )**(-0.5)
+      if (r .ge. risco) then
+         dlorfac = (a+r**1.5d0 )/sqrt(2.0d0 * a * r**1.5d0 + &
+              (-3.0d0 + r) * r**2.0d0) &
+              * sqrt((r * Delta) / (r**3.d0 + (2.d0 + r)*a**2.d0))
+      else
+         vt_ = vt(r,a)
+         dlorfac = vt_ * sqrt( (r * Delta) / (r**3.d0 + (2.d0 + r) * a**2.d0) )
+      endif
       return
       end
 !-----------------------------------------------------------------------
-
-!-----------------------------------------------------------------------
-      function kinematic_energy(a,isco)
-      implicit none
-      double precision a,isco
-      double precision kinematic_energy
-      kinematic_energy=(1.0-(2.0/isco)+a/(isco**1.5))/(sqrt(1.0-3.0/isco+2.0*a/(isco**1.5)))
-      return
-      end
-!-----------------------------------------------------------------------
-      function angular_momentum(a,isco)
-      implicit none
-      double precision a,isco
-      double precision angular_momentum
-      angular_momentum=((isco**0.5)*(1.0+((a**2.0)/(isco**2.0))-2.0*a/(isco**1.5)))/(sqrt(1.0-3.0/isco+2.0*a/(isco**1.5)))
-      return
-      end
-! !-----------------------------------------------------------------------
-!       function vt(r,a)
-!       use isco_data
-!       implicit none
-!       double precision r,a
-!       double precision Delta
-!       double precision vt
-!       Delta   = r**2 - 2*r + a**2
-!       vt=(1.0/Delta)*((r**2.0+a**2.0+2.0*((a**2.0)/r))*KE-(2.0*a*AM/r))
-!       return
-!       end
-! !-----------------------------------------------------------------------
-!       function vr(r,a)
-!       use isco_data
-!       implicit none
-!       double precision r,a
-!       double precision vr
-!       vr=(KE**2.0)-1.0+2.0/r+((a**2.0)*(KE**2.0-1.0)-AM**2.0)/(r**2.0)+(2.0*(AM-a*KE)**2.0)/(r**3.0)
-!       if(vr.lt.0.d0)then
-!       vr=0.d0
-!       endif
-!       vr=-sqrt(vr)
-!       return
-!       end
-! !-----------------------------------------------------------------------
-!       function vphi(r,a)
-!       use isco_data
-!       implicit none
-!       double precision r,a
-!       double precision Delta
-!       double precision vphi
-!       Delta   = r**2 - 2*r + a**2
-!       vphi=(1.0/Delta)*((2.0*a*KE/r)+(1-2/r)*AM)
-!       return
-!       end

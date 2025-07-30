@@ -54,7 +54,7 @@ subroutine rtrans(verbose,dset,nlp,spin,h,mu0,Gamma,rin,rout,honr,d,rnmax,zcos,b
     double precision rfunc,scal,velocity(3),mudisk,sysfref
     double precision rnmax,rnmin,rn(nro),phin,mueff,dlogr,interper
     double precision fi(nf),dgsofac,sindisk,mue,demang,frobs(nlp),cosdin,frrel(nlp)
-    double precision pnormer,mus,ptf,pfunc_raw,ang_fac
+    double precision pnormer,cosd_interp,ptf,pfunc_raw,ang_fac
     integer nron,nphin,nrosav,nphisav,verbose
     double precision spinsav,musav,routsav,mudsav,rnn(nro),domegan(nro)
     integer get_env_int
@@ -120,7 +120,7 @@ subroutine rtrans(verbose,dset,nlp,spin,h,mu0,Gamma,rin,rout,honr,d,rnmax,zcos,b
        call getlens(spin,h(1),mu0,lens(1),tauso(1),cosdelta_obs(1))
        if( tauso(1) .ne. tauso(1) ) stop "tauso is NaN"
     else
-       !here the observed cutoffs are set from the temperature in the source frame   
+
        do m = 1, nlp
           gso(m) = real( dgsofac(spin,h(m)) )
           call getlens(spin,h(m),mu0,lens(m),tauso(m),cosdelta_obs(m))
@@ -129,7 +129,7 @@ subroutine rtrans(verbose,dset,nlp,spin,h,mu0,Gamma,rin,rout,honr,d,rnmax,zcos,b
     endif
     
     ! Set up observer's camera ( alpha = rn sin(phin), beta = mueff rn cos(phin) )
-    ! to do full GR ray tracing with      
+    ! to do full GR ray tracing with
     mueff  = max( mu0 , 0.3d0 )
     rnmin  = rfunc(spin,mu0)
     !Grid to do in full GR
@@ -166,8 +166,8 @@ subroutine rtrans(verbose,dset,nlp,spin,h,mu0,Gamma,rin,rout,honr,d,rnmax,zcos,b
     sin0     = sqrt(1.0-cos0**2)
     frobs    = 0.0 !Initialised observer's reflection fraction
 
-    ! Calculate dcos/dr and time lags vs r for the lamppost model
-    call getdcos(spin,h,mudisk,ndelta,nlp,rout,npts,rlp,dcosdr,tlp,cosd,cosdout) 
+    ! Calculate dcos/dr (dcosdr in dyn_gr) and time lags vs r for the lamppost model
+    call getdcos(spin,h,mudisk,ndelta,nlp,rout,rlp,tlp,cosd,cosdout) 
 
     !set continuum normalisations depending on model flavour 
     if( dset .eq. 0 )then
@@ -197,39 +197,60 @@ subroutine rtrans(verbose,dset,nlp,spin,h,mu0,Gamma,rin,rout,honr,d,rnmax,zcos,b
                     odisc = 1
                     do m=1,nlp
                        taudo = taudo1(j,i)
-                       if (re .gt. risco) g = dlgfac(spin,mu0,alpha,re)
-                       if (re .gt. rmin .and. re .lt. risco) g = dlgfac_inside_isco(spin, mu0, alpha, beta, re, t_r(j,i))
-                       write(10,*) re, rn(i), phin, g
+                       if (re .gt. risco) then
+                          !calculate g factor disk to observer
+                          g = dlgfac(spin,mu0,alpha,re)
+                       endif
+
+                       if (re .gt. rmin .and. re .lt. risco) then
+                          !calculate g factor disk to observer inside isco
+                          g = dlgfac_inside_isco(spin, mu0, alpha, beta, re, t_r(j,i))
+                       endif
+                       !Calculate emission angle and work out which mue bin to add to
+                       mue   = demang(spin, g, mu0, re, alpha, beta)
+                       mubin = ceiling( mue * dble(me) )
+
+                       write(20,*) re, rn(i), phin, g
                         ! g = dlgfacthick(spin,mu0,alpha,re,mudisk) !disk to observer g factor
-                        gsd(m) = dglpfacthick(re,spin,h(m),mudisk) !source to disk g factor
-                        !Find the rlp bin that corresponds to re
-                        kk = get_index(rlp(:,m),ndelta,re,rmin,npts(m))
-                        !Interpolate (or extrapolate) the time function
-                        tausd = interper(rlp(:,m),tlp(:,m),ndelta,re,kk)
-                        tau(m) = (1.d0+zcos)*(tausd+taudo-tauso(1)) !Time lag between direct and reflected photons
-                        !Interpolate |dcos\delta/dr| function
-                        cosfac = interper(rlp(:,m),dcosdr(:,m),ndelta,re,kk)
-                        mus = interper(rlp(:,m),cosd(:,m),ndelta,re,kk)
-                        !Extrapolate to Newtonian if need be
-                        if( kk .eq. npts(m) ) then
-                            cosfac = newtex(rlp(:,m),dcosdr(:,m),ndelta,re,h(m),honr,kk)
-                            mus = newtex(rlp(:,m),cosd(:,m),ndelta,re,h(m),honr,kk)
-                        end if
-                        !Calculate angular emissivity
-                        ptf = pnorm * pfunc_raw(-mus,b1,b2,qboost)
-                        !Calculate flux from pixel
-                        emissivity(m) = gsd(m)**Gamma * 2.d0 * pi * ptf
-                        emissivity(m) = emissivity(m) * cosfac / dareafac(re,spin)                  
-                        dFe(m) = emissivity(m) * g**3 * domega(i) / (1.d0+zcos)**3
-                        !calculate extra factors that go into the transfer functions for double lps
-                        if (nlp .gt. 1) then
-                            thetafac(m) = emissivity(m)*gso(m)**(Gamma-2.)*gsd(m)**(2.-Gamma)
-                        else !single lamp post case, double check this later
-                            thetafac(m) = 1.
-                        endif
+
+                       !Find the rlp bin that corresponds to re
+                       kk = get_index(rlp(:,m),ndelta,re,rmin,npts(m))
+                       !Interpolate (or extrapolate) the time function
+                       tausd = interper(rlp(:,m),tlp(:,m),ndelta,re,kk)
+                       !Time lag between direct and reflected photons
+                       tau(m) = (1.d0+zcos)*(tausd+taudo-tauso(1)) 
+                       !Interpolate |dcos\delta/dr| function
+                       cosfac = interper(rlp(:,m),dcosdr(:,m),ndelta,re,kk)
+                       cosd_interp = interper(rlp(:,m),cosd(:,m),ndelta,re,kk)
+
+                       write(32,*) re, phin, cosd_interp
+
+                       !Extrapolate to Newtonian if need be
+                       if( kk .eq. npts(m) ) then
+                          cosfac = newtex(rlp(:,m),dcosdr(:,m),ndelta,re,h(m),honr,kk)
+                          cosd_interp = newtex(rlp(:,m),cosd(:,m),ndelta,re,h(m),honr,kk)
+                       end if
+                       !source to disk g factor
+                       gsd(m) = dglpfacthick(re,spin,h(m),mudisk, cosd_interp)
+                       
+                       !Calculate angular emissivity
+                       ptf = pnorm * pfunc_raw(-cosd_interp,b1,b2,qboost)
+                       !Calculate flux from pixel
+                       emissivity(m) = gsd(m)**Gamma * 2.d0 * pi * ptf
+                       emissivity(m) = emissivity(m) * cosfac / dareafac(re,spin)
+                       dFe(m) = emissivity(m) * g**3 * domega(i) / (1.d0+zcos)**3
+                       
+                       write(21,*) re, phin,  dFe(m), gsd(m), ptf, cosfac, dareafac(re,spin), g, domega(i)
+                        
+                       !calculate extra factors that go into the transfer functions for double lps
+                       if (nlp .gt. 1) then
+                          thetafac(m) = emissivity(m) * gso(m)**(Gamma-2.) * gsd(m)**(2. - Gamma)
+                       else !single lamp post case, double check this later
+                          thetafac(m) = 1.
+                       endif
                         !Add to reflection fraction
-                        frobs(m) = frobs(m) + 2.0*g**3*gsd(m)*cosfac/dareafac(re,spin)*domega(i)
-                        ! write(*,*) g, gsd(m), cosfac, dareafac(re, spin), domega(i)
+                       frobs(m) = frobs(m) + 2.0 * g**3 * gsd(m) * cosfac / dareafac(re,spin) * domega(i)
+                       ! write(*,*) g, gsd(m), cosfac, dareafac(re, spin), domega(i)
                     end do
                    
                     !tbd: put a second for loop over lps here, now that both emissivity/dfe/tau are known
@@ -244,9 +265,6 @@ subroutine rtrans(verbose,dset,nlp,spin,h,mu0,Gamma,rin,rout,honr,d,rnmax,zcos,b
                         rbin = MIN( rbin , xe )
                         !Add to the radial dependence of the transfer function TBD MAKE SURE THIS IS RIGHT
                         dfer_arr(rbin) = dfer_arr(rbin) + dFe(nl)
-                        !Calculate emission angle and work out which mue bin to add to
-                        mue   = demang(spin,mu0,re,alpha,beta)
-                        mubin = ceiling( mue * dble(me) )
                         !calculate the extra factors for w2/3
                         !if (nl .eq. 1 .and. nlp .gt. 1) then
                         !    emisfac = emissivity(1)+eta_0*emissivity(2)
@@ -283,8 +301,19 @@ subroutine rtrans(verbose,dset,nlp,spin,h,mu0,Gamma,rin,rout,honr,d,rnmax,zcos,b
                             tbin = MAX( 1    , tbin )
                             tbin = MIN( tbin , nt   )
                             ! kernel of the impulse response function
-                            resp(gbin,tbin) = resp(gbin,tbin) + dFe(nl)
-                        end if 
+                            resp(gbin,tbin) = resp(gbin,tbin) + dFe(nl)                            
+                         end if
+
+                         ! if (verbose .gt. 0) then
+                         !    ! check for testing
+                         !    do i = 1, nf
+                         !       write(*, *)  nl, gbin, fbin, mubin, rbin,  ker_W0(nl,gbin,fbin,mubin,rbin)
+                         !       if (ker_W0(nl,gbin,fbin,mubin,rbin) .ne. ker_W0(nl,gbin,fbin,mubin,rbin)) then
+                         !          write(*, *) " There is a NaN "
+                         !       endif
+                         !    enddo
+                         ! endif
+                         
                     end do
                 end if
             end if
@@ -309,16 +338,16 @@ subroutine rtrans(verbose,dset,nlp,spin,h,mu0,Gamma,rin,rout,honr,d,rnmax,zcos,b
                     tau(m) = (1.d0+zcos)*tau(m)
                     !Interpolate |dcos\delta/dr| function
                     cosfac = interper(rlp(:,m),dcosdr(:,m),ndelta,re,kk)
-                    mus = interper(rlp(:,m),cosd(:,m),ndelta,re,kk)
+                    cosd_interp = interper(rlp(:,m),cosd(:,m),ndelta,re,kk)
                     !Extrapolate to Newtonian if needs be
                     if( kk .eq. npts(m) )then
                         cosfac = newtex(rlp(:,m),dcosdr(:,m),ndelta,re,h(m),honr,kk)
-                        mus = newtex(rlp(:,m),cosd(:,m),ndelta,re,h(m),honr,kk)
+                        cosd_interp = newtex(rlp(:,m),cosd(:,m),ndelta,re,h(m),honr,kk)
                     end if
                     !Calculate angular emissivity
-                    ptf = pnorm * pfunc_raw(-mus,b1,b2,qboost)
+                    ptf = pnorm * pfunc_raw(-cosd_interp,b1,b2,qboost)
                     !Calculate flux from pixel
-                    gsd(m) = dglpfacthick(re,spin,h(m),mudisk)
+                    gsd(m) = dglpfacthick(re,spin,h(m),mudisk, cosd_interp)
                     emissivity(m) = gsd(m)**Gamma * 2.d0 * pi * ptf
                     emissivity(m) = emissivity(m) * cosfac / dareafac(re,spin)
                     dFe(m) = emissivity(m) * g**3 * domegan(i) / (1.d0+zcos)**3
@@ -343,7 +372,7 @@ subroutine rtrans(verbose,dset,nlp,spin,h,mu0,Gamma,rin,rout,honr,d,rnmax,zcos,b
                     !Add to the radial dependence of the transfer function
                     dfer_arr(rbin) = dfer_arr(rbin) + dFe(nl)
                     !Calculate emission angle and work out which mue bin to add to
-                    mue = demang(spin,mu0,re,alpha,beta)
+                    mue = demang(spin,g,mu0,re,alpha,beta)
                     mubin = ceiling( mue * dble(me) )
                     !calculate the extra factors for w2/3
                     if (nlp .gt. 1) then
