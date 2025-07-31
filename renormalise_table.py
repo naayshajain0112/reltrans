@@ -42,8 +42,9 @@ if (query_yes_no('Have you set the environment variable RELTRANS_TABLES?')):
     print(f'The RELTRANS_TABLES env variable is {reltrans_table}')
     print
 else:
-    # print('Indicate the path of the folder where either you keep the xillver tables or you want to download them')
-    reltrans_table = input('Indicate the path of the folder where either you keep the xillver tables or you want to download them: ')
+    print('Indicate the path of the folder where either you keep the xillver tables or you want to download them.')
+    print('(the script creates a new folder if the given path point to a non-existing one)')
+    reltrans_table = input('input the path: ')
     print(reltrans_table)
     print
     
@@ -52,6 +53,8 @@ print(f'The first part of the script gives the option to download the xillver ta
 print(f'(reltrans needs the xillver tables: {xillver_table_name[0]} and {xillver_table_name[1]})')
 print()
 if (query_yes_no('Do you need to download the xillver tables?')):
+    command = 'mkdir -p '+ str(reltrans_table)
+    os.system(command)
     command = 'wget -c --retry-connrefused --waitretry=5 --timeout=30 -t 10 -P ' + str(reltrans_table) + ' https://sites.srl.caltech.edu/~javier/xillver/tables/'
 
     for name_table in xillver_table_name:
