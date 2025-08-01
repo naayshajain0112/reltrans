@@ -20,7 +20,7 @@ subroutine radfuncs_dist(xe, rin, rnmax, b1, b2, qboost, fcons,&
   double precision, intent(IN)   :: rlp(ndelta), dcosdr(ndelta), cosd(ndelta)
   double precision, intent(INOUT):: logxieff(xe), gsdr(xe), logner(xe)
   integer          :: i, kk, get_index, get_env_int, verbose
-  double precision :: pnorm,re,re1(xe),zA_logne,cosfac,mus,interper,newtex,mudisk
+  double precision :: pnorm,re,re1(xe),zA_logne,cosfac,cosd_interp,interper,newtex,mudisk
   double precision, parameter :: pi = acos(-1.d0)
   double precision :: ptf,pfunc_raw,gsd,dglpfacthick,eps_bol,Fx(xe),logxir(xe),mui,dinang
   double precision :: dareafac,lximax
@@ -39,14 +39,14 @@ subroutine radfuncs_dist(xe, rin, rnmax, b1, b2, qboost, fcons,&
      !Interpolate functions from rpl grid
      kk     = get_index(rlp,ndelta,re,rmin,npts)
      cosfac = interper(rlp,dcosdr,ndelta,re,kk)
-     mus    = interper(rlp,cosd  ,ndelta,re,kk)
+     cosd_interp    = interper(rlp,cosd  ,ndelta,re,kk)
      if( kk .eq. npts )then !Extrapolation onto Newtonian grid
         cosfac = newtex(rlp,dcosdr,ndelta,re,h,honr,kk)
-        mus    = newtex(rlp,cosd  ,ndelta,re,h,honr,kk)
+        cosd_interp    = newtex(rlp,cosd  ,ndelta,re,h,honr,kk)
      end if
      !Calculate 13.6 eV - 13.6 keV illuminating flux
-     ptf     = pnorm * pfunc_raw(-mus,b1,b2,qboost)
-     gsd     = dglpfacthick(re,spin,h,mudisk)
+     ptf     = pnorm * pfunc_raw(-cosd_interp,b1,b2,qboost)
+     gsd     = dglpfacthick(re,spin,h,mudisk, cosd_interp)
      !gsd     = dglpfac(re,spin,h)
      gsdr(i) = gsd
      eps_bol = gsd**2 * 2.0 * pi * ptf
@@ -55,7 +55,7 @@ subroutine radfuncs_dist(xe, rin, rnmax, b1, b2, qboost, fcons,&
      !Calculate logxi(r)
      logxir(i) = log10( 4.0 * pi * Fx(i) ) - logner(i)
      !Now adjust to effective ionization parameter
-     mui         = dinang(spin, re, h, mus)
+     mui         = dinang(spin, re, h, cosd_interp)
      logxieff(i) = logxir(i) - 0.1505 - log10(mui)     
 !     write(188,*)re,logxir(i),logxieff(i)
      

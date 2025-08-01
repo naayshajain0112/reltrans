@@ -20,21 +20,21 @@
 ! !-----------------------------------------------------------------------
 
       
-!-----------------------------------------------------------------------
-      function areafac(r,a)
-! Calculates dA/dr, where A is the surface area of a disk ring
-! *ADJUSTED FOR ORBITAL MOTION* BY MULTIPLYING BY THE LORENTZ FACTOR
-      implicit none
-      real areafac,r,a
-      real Dm,dArbydr,pi,lorfac
-      pi = acos(-1.0)
-      Dm     = r**2 - 2*r + a**2
-      dArbydr = ( r**4+a**2*r**2+2*a**2*r ) / Dm
-      dArbydr = 2*pi*sqrt(dArbydr)
-      areafac = lorfac(r,a) * dArbydr
-      return
-      end
-!-----------------------------------------------------------------------
+! !-----------------------------------------------------------------------
+!       function areafac(r,a)
+! ! Calculates dA/dr, where A is the surface area of a disk ring
+! ! *ADJUSTED FOR ORBITAL MOTION* BY MULTIPLYING BY THE LORENTZ FACTOR
+!       implicit none
+!       real areafac,r,a
+!       real Dm,dArbydr,pi,lorfac
+!       pi = acos(-1.0)
+!       Dm     = r**2 - 2*r + a**2
+!       dArbydr = ( r**4+a**2*r**2+2*a**2*r ) / Dm
+!       dArbydr = 2*pi*sqrt(dArbydr)
+!       areafac = lorfac(r,a) * dArbydr
+!       return
+!       end
+! !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
       function dareafac(r,a)
@@ -280,7 +280,7 @@ function dglpfacthick(r,a,h,mudisk,cosdelta)
      call YNOGK(pcros-1.d-5,f1234,lambda,q,0.d0,1.d0,a,h,1.d0,&
           r1,mu1,phi1,t1,sigma1, t_r1, t_r2) 
      call YNOGK(pcros,f1234,lambda,q,0.d0,1.d0,a,h,1.d0,&
-          r2,mu2,phi2,t2,sigma2, t_r1, t_r2) 
+          r2,mu2,phi2,t2,sigma2, t_r1, t_r2)
      if(pcros.lt.0.d0)then
         dglpfacthick=0.d0
      else
@@ -288,14 +288,20 @@ function dglpfacthick(r,a,h,mudisk,cosdelta)
         vr_ = vr(r)
         ! kr = sqrt(r**4. - (q + lam**2. - a**2.) * r**2. + &
         !      2. * r * (q + (lam - a)**2.) - a**2.0 * q) / Delta
-        !which is equivalent to the power of 2 of the following 
+        !which is equivalent to the power of 2 of the following
         kr = sqrt( (r**2.0 + a**2.0)**2.0 - Delta * (q + a**2.0) )/ Delta
-        write(40,*) t_r1, (r2-r1)
+        if (kr .ne. kr) kr = 0.d0 ! this is needed since we used interpolated values of cosdelta for this patch of the disk (if you increase the ndelta, the negative value over the sqrt disappears
+
+        ! write(22,*) r, cosdelta, kr, (r**2.0 + a**2.0)**2.0, Delta * (q + a**2.0), q, lambda, pcros, t_r1
+        ! write(40,*) t_r1, (r2-r1) !t_r1 is 1 when (r2-r1) > 0, is 0 when (r2-r1) < 0
+        !this is very strange I would have imagined the opposite
         if ((r2-r1).lt.0.d0)then
            dglpfacthick=-sqrt(Dh / (h**2 + a**2) )*(-vt_ - kr * vr_)
         else
            dglpfacthick=-sqrt(Dh / (h**2 + a**2) )*(-vt_ + kr * vr_)
         endif
+        ! dglpfacthick=-sqrt(Dh / (h**2 + a**2) )*(-vt_ -(-1.0)**t_r1, kr * vr_)
+        
      endif
   endif
   ! write(1003,*)r,dglpfacthick

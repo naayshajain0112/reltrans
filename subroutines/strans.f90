@@ -41,7 +41,7 @@ subroutine rtrans(verbose,dset,nlp,spin,h,mu0,Gamma,rin,rout,honr,d,rnmax,zcos,b
     integer nro,nphi,ne,nf,me,xe,dset,nlp
     double precision spin,h(nlp),mu0,Gamma,rin,rout,zcos,fhi,flo,honr
     double precision b1,b2,qboost
-    double precision fcons,cosdout(nlp)
+    double precision fcons
     real dloge, lognep
     complex cexp!,transe(0:nlp,ne,nf,me,xe),transe_a(nlp,ne,nf,me,xe)
 
@@ -167,7 +167,8 @@ subroutine rtrans(verbose,dset,nlp,spin,h,mu0,Gamma,rin,rout,honr,d,rnmax,zcos,b
     frobs    = 0.0 !Initialised observer's reflection fraction
 
     ! Calculate dcos/dr (dcosdr in dyn_gr) and time lags vs r for the lamppost model
-    call getdcos(spin,h,mudisk,ndelta,nlp,rout,rlp,tlp,cosd,cosdout) 
+    call getdcos(spin,h,mudisk,ndelta,nlp,rout)
+    !this function assign values to: npts, dcosdr, rlp,tlp, cosd, cosdout
 
     !set continuum normalisations depending on model flavour 
     if( dset .eq. 0 )then
@@ -183,10 +184,10 @@ subroutine rtrans(verbose,dset,nlp,spin,h,mu0,Gamma,rin,rout,honr,d,rnmax,zcos,b
     ! Construct the transfer function by summing over all pixels
     odisc    = 1       !flag to ensure the chosen disk radius is between rin and rout
     i        = nro + 1
-    do while( odisc .eq. 1 .and. i .gt. 1 )             !main loops of the subroutine: first is for GR
-        i = i - 1                                       !i counts over the camera until it reaches the disk inner radius
+    do while( odisc .eq. 1 .and. i .gt. 1 )    !main loops of the subroutine: first is for GR
+        i = i - 1                              !i counts over the camera until it reaches the disk inner radius
         odisc = 0
-        do j = 1,NPHI                                   !azimuth over BH on the disk
+        do j = 1,NPHI                          !azimuth over BH on the disk
             phin  = (j-0.5) * 2.d0 * pi / dble(nphi)
             alpha = rn(i) * sin(phin)
             beta  = -rn(i) * cos(phin) * mueff
@@ -206,12 +207,12 @@ subroutine rtrans(verbose,dset,nlp,spin,h,mu0,Gamma,rin,rout,honr,d,rnmax,zcos,b
                           !calculate g factor disk to observer inside isco
                           g = dlgfac_inside_isco(spin, mu0, alpha, beta, re, t_r(j,i))
                        endif
+                       ! g = dlgfacthick(spin,mu0,alpha,re,mudisk) !disk to observer g factor
                        !Calculate emission angle and work out which mue bin to add to
                        mue   = demang(spin, g, mu0, re, alpha, beta)
                        mubin = ceiling( mue * dble(me) )
 
-                       write(20,*) re, rn(i), phin, g
-                        ! g = dlgfacthick(spin,mu0,alpha,re,mudisk) !disk to observer g factor
+                       ! write(20,*) re, phin, rn(i), g
 
                        !Find the rlp bin that corresponds to re
                        kk = get_index(rlp(:,m),ndelta,re,rmin,npts(m))
@@ -240,7 +241,7 @@ subroutine rtrans(verbose,dset,nlp,spin,h,mu0,Gamma,rin,rout,honr,d,rnmax,zcos,b
                        emissivity(m) = emissivity(m) * cosfac / dareafac(re,spin)
                        dFe(m) = emissivity(m) * g**3 * domega(i) / (1.d0+zcos)**3
                        
-                       write(21,*) re, phin,  dFe(m), gsd(m), ptf, cosfac, dareafac(re,spin), g, domega(i)
+                       write(21,*) re, phin, cosd_interp, gsd(m), ptf, cosfac, dareafac(re,spin), g, domega(i)
                         
                        !calculate extra factors that go into the transfer functions for double lps
                        if (nlp .gt. 1) then

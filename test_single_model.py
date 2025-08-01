@@ -35,8 +35,8 @@ for i in range(ne):
 param = np.zeros(21, dtype = np.float32)
 
 
-param[0]  = 6.0     #h     !Source height **-ve means in units of BH horizon, +ve means in Rg***
-param[1]  = 0.998   #a     !BH spin
+param[0]  = 10.0    #h     !Source height **-ve means in units of BH horizon, +ve means in Rg***
+param[1]  = 0.0     #a     !BH spin
 param[2]  = 30.0    #inc   !Inclination angle in degrees
 param[3]  = 1.01    #rin   !Disk inner radius **-ve means in units of ISCO, +ve means in Rg***
 param[4]  = 1e3     #rout  !Disk outer radius in Rg - will probably hardwire this
@@ -107,7 +107,7 @@ for axis in ['top','bottom','left','right']:
 ax.yaxis.set_ticks_position('both')
 ax.legend(fontsize = 10)
 
-print(photar_test)
+# print(photar_test)
 
             # E = (ear[1:] + ear[:-1]) * 0.5 
             # dE = (ear[1:] - ear[:-1])

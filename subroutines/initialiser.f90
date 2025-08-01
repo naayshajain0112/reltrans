@@ -121,14 +121,15 @@ subroutine initialiser(firstcall,Emin,Emax,dloge,earx,rnmax,d,needtrans,me,xe,re
         if (.not. allocated (logner)  ) allocate (logner  (xe))
 
         !Allocate GR arrays
-        if (.not. allocated (cosd)        ) allocate (cosd  (ndelta,nlp))
-        if (.not. allocated (dcosdr)      ) allocate (dcosdr(ndelta,nlp))
-        if (.not. allocated (rlp   )      ) allocate (rlp   (ndelta,nlp))
-        if (.not. allocated (tlp   )      ) allocate (tlp   (ndelta,nlp))
-        if (.not. allocated (npts)        ) allocate (npts  (       nlp))
-        if (.not. allocated (gso)         ) allocate (gso   (       nlp))
-        if (.not. allocated (tauso)       ) allocate (tauso (       nlp))
-        if (.not. allocated (cosdelta_obs)) allocate (cosdelta_obs(nlp))
+        if (.not. allocated (cosd)        ) allocate (cosd   (ndelta,nlp))
+        if (.not. allocated (dcosdr)      ) allocate (dcosdr (ndelta,nlp))
+        if (.not. allocated (rlp   )      ) allocate (rlp    (ndelta,nlp))
+        if (.not. allocated (tlp   )      ) allocate (tlp    (ndelta,nlp))
+        if (.not. allocated (npts)        ) allocate (npts   (       nlp))
+        if (.not. allocated (gso)         ) allocate (gso    (       nlp))
+        if (.not. allocated (tauso)       ) allocate (tauso  (       nlp))
+        if (.not. allocated (cosdout)     ) allocate (cosdout(       nlp))
+        if (.not. allocated (cosdelta_obs)) allocate (cosdelta_obs(  nlp))
 
      end if
      return

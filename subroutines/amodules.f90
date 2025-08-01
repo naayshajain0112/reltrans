@@ -48,6 +48,7 @@ MODULE dyn_gr
     double precision                              :: rh, rmin
     double precision, dimension(:,:), allocatable :: re1,taudo1,pem1
     double precision, dimension(:,:), allocatable :: dcosdr, cosd, rlp, tlp
+    double precision, dimension(:)  , allocatable :: cosdout
     save status_re_tau
 END MODULE dyn_gr
 
@@ -87,6 +88,17 @@ module radial_grids
   double precision :: pnorm
   save logxir, gsdr, logner
 end module radial_grids
+
+! module source_to_disk
+!   implicit none
+!   integer n, nlp
+!   double precision, dimension(:,:), allocatable :: r1, tc, cosd1,
+!   double precision                              :: cosdout 
+!   ! r1(n,nlp)        Radius of disk crossing
+!   ! tc(n,nlp)        Corresponding time coordinate
+!   ! cosd1(n,nlp)     Corresponding \cos\delta
+!   ! cosdout          cosd at the outer disk radius   
+! end module source_to_disk
 
 module conv_mod
   use, intrinsic :: iso_c_binding
