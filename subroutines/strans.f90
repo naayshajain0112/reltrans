@@ -212,8 +212,6 @@ subroutine rtrans(verbose,dset,nlp,spin,h,mu0,Gamma,rin,rout,honr,d,rnmax,zcos,b
                        mue   = demang(spin, g, mu0, re, alpha, beta)
                        mubin = ceiling( mue * dble(me) )
 
-                       ! write(20,*) re, phin, rn(i), g
-
                        !Find the rlp bin that corresponds to re
                        kk = get_index(rlp(:,m),ndelta,re,rmin,npts(m))
                        !Interpolate (or extrapolate) the time function
@@ -223,8 +221,6 @@ subroutine rtrans(verbose,dset,nlp,spin,h,mu0,Gamma,rin,rout,honr,d,rnmax,zcos,b
                        !Interpolate |dcos\delta/dr| function
                        cosfac = interper(rlp(:,m),dcosdr(:,m),ndelta,re,kk)
                        cosd_interp = interper(rlp(:,m),cosd(:,m),ndelta,re,kk)
-
-                       write(32,*) re, phin, cosd_interp
 
                        !Extrapolate to Newtonian if need be
                        if( kk .eq. npts(m) ) then
@@ -241,7 +237,7 @@ subroutine rtrans(verbose,dset,nlp,spin,h,mu0,Gamma,rin,rout,honr,d,rnmax,zcos,b
                        emissivity(m) = emissivity(m) * cosfac / dareafac(re,spin)
                        dFe(m) = emissivity(m) * g**3 * domega(i) / (1.d0+zcos)**3
                        
-                       write(21,*) re, phin, cosd_interp, gsd(m), ptf, cosfac, dareafac(re,spin), g, domega(i)
+                       write(21,*) re, phin, alpha, beta, gsd(m), cosfac, dareafac(re,spin), emissivity(m), g
                         
                        !calculate extra factors that go into the transfer functions for double lps
                        if (nlp .gt. 1) then

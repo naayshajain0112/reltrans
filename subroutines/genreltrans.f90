@@ -376,18 +376,18 @@ subroutine genreltrans(Cp, dset, nlp, ear, ne, param, ifl, photar)
         print *, 'Convolutions runtime: ', time_end - time_start, ' seconds' 
     endif
 
-    do i = 1, nex
-       E = (earx(i-1) + earx(i))*0.5
-       write(10,*) E, reline_w1(1,i)
+    ! do i = 1, nex
+    !    E = (earx(i-1) + earx(i))*0.5
+       ! write(10,*) E, reline_w1(1,i)
        ! write(11,*) E, imline_w1(1,i)
        ! write(12,*) E, reline_w2(1,i)
        ! write(13,*) E, imline_w2(1,i)
        ! write(14,*) E, reline_w3(1,i)
        ! write(15,*) E, imline_w3(1,i)
-       write(16,*) E, photarx(i)
+       ! write(16,*) E, photarx(i)
        ! write(17,*) E, photarx_delta(i)
        ! write(18,*) E, photarx_dlogxi(i)
-    enddo
+    ! enddo
     
     ! Calculate absorption 
     call tbabs(earx,nex,nh,Ifl,absorbx,photerx)

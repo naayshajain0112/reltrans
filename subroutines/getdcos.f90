@@ -62,7 +62,7 @@ subroutine getdcos(a_spin,h,mudisk,n,nlp,rout)
             pcros = Pemdisk(f1234,lambda,q,sins,mus,a_spin,h(m),scal,mudisk,r_max,r_min)
             !From that, calculate r, phi and t at mu=0
             call YNOGK(pcros,f1234,lambda,q,sins,mus,a_spin,h(m),scal,rcros,mucros,phicros,tcros,sigmacros, t_r1, t_r2)
-            write(31,*) deltas, pcros, rcros
+            ! write(31,*) deltas, pcros, rcros
             if( pcros .gt. 0.0 )then
                 counter         = counter + 1
                 rlp(counter,m)  = rcros

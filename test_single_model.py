@@ -35,11 +35,11 @@ for i in range(ne):
 param = np.zeros(21, dtype = np.float32)
 
 
-param[0]  = 10.0    #h     !Source height **-ve means in units of BH horizon, +ve means in Rg***
-param[1]  = 0.0     #a     !BH spin
+param[0]  = 6.0    #h     !Source height **-ve means in units of BH horizon, +ve means in Rg***
+param[1]  = 0.99     #a     !BH spin
 param[2]  = 30.0    #inc   !Inclination angle in degrees
-param[3]  = 1.01    #rin   !Disk inner radius **-ve means in units of ISCO, +ve means in Rg***
-param[4]  = 1e3     #rout  !Disk outer radius in Rg - will probably hardwire this
+param[3]  = 1.0    #rin   !Disk inner radius **-ve means in units of ISCO, +ve means in Rg***
+param[4]  = 2e4     #rout  !Disk outer radius in Rg - will probably hardwire this
 param[5]  = 0.0     #zcos  !Cosmological redshift
 param[6]  = 2.0     #Gamma !Photon index
 param[7]  = 3.0     #logxi !log10xi - ionisation parameter
@@ -85,10 +85,10 @@ print('RELTRANS finished!')
 print('*********************************************************')
 print()
 
-with open ('test_final_model.txt', 'w') as out:
-    E = (ear[1:] + ear[:-1]) * 0.5 
-    for i, phot in enumerate(photar_test):
-        out.writelines(str(E[i]) + ' ' + str(phot) + '\n')
+# with open ('test_final_model.txt', 'w') as out:
+#     E = (ear[1:] + ear[:-1]) * 0.5 
+#     for i, phot in enumerate(photar_test):
+#         out.writelines(str(E[i]) + ' ' + str(phot) + '\n')
 
 plt.ion()
 # #Print the two models 
