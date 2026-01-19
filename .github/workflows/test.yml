@@ -48,8 +48,9 @@ jobs:
           # Authenticate with GitHub cli
           echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
 
-          # TODO: update when contributing upstream
-          gh release download ephemeral -D reltrans-data -R fjebaker/reltrans
+          # This release version will have to be changed if changes to the test
+          # data are made
+          gh release download v0.1.0 -D reltrans-data -R reltrans/model-data
 
           # Stitch the large files back together
           cd reltrans-data
