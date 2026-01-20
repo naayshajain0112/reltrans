@@ -1,6 +1,7 @@
 import inspect
 import pathlib
 import logging
+import dataclasses
 
 import pytest
 import wrapper
@@ -10,12 +11,13 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 # The `test` directory
-ROOT_DIR = pathlib.Path(pathlib.Path(__file__).parent) / "_snapshots"
+ROOT_DIR = pathlib.Path(pathlib.Path(__file__).parent)
+SNAPSHOT_DIR = ROOT_DIR / "_snapshots"
 
 
 def _get_snapshot(name: str) -> None | np.ndarray:
     """Retrieve the snapshot by name or None if the file does not exist."""
-    path = (ROOT_DIR / name).with_suffix(".npy")
+    path = (SNAPSHOT_DIR / name).with_suffix(".npy")
     if not path.is_file():
         return None
     return np.load(str(path.absolute()))
@@ -23,8 +25,8 @@ def _get_snapshot(name: str) -> None | np.ndarray:
 
 def _create_snapshot(name: str, data: np.array):
     """Create a snapshot by name and store the data in the given numpy array."""
-    ROOT_DIR.mkdir(parents=True, exist_ok=True)
-    path = ROOT_DIR / name
+    SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
+    path = SNAPSHOT_DIR / name
     np.save(str(path.absolute()), data)
 
 
@@ -83,3 +85,27 @@ def assert_snapshot() -> callable:
         np.testing.assert_allclose(data, snapshot, rtol=rtol)
 
     return _assert_snapshot_equal
+
+
+@dataclasses.dataclass
+class TelescopeData:
+    arf_path: str
+    rmf_path: str
+
+
+@pytest.fixture
+def telescope() -> TelescopeData:
+    """Obtain paths to telescope files."""
+    repo_root = pathlib.Path(ROOT_DIR.parent)
+    rmf_path = (
+        repo_root / "Benchmarks" / "resp_matrix" / "nicer-rmf6s-teamonly-array50.rmf"
+    )
+    arf_path = (
+        repo_root
+        / "Benchmarks"
+        / "resp_matrix"
+        / "nicer-consim135p-teamonly-array50.arf"
+    )
+    return TelescopeData(
+        arf_path=str(arf_path.absolute()), rmf_path=str(rmf_path.absolute())
+    )
