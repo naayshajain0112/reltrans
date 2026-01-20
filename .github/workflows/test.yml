@@ -8,6 +8,7 @@ on:
     paths: [
       '.github/workflows/test.yml',
       '**/*.f90',
+      '**/*.py',
       'utils/Makefile',
       'utils/cli.c',
       'wrappers.f90'
@@ -19,6 +20,7 @@ on:
     paths: [
       '.github/workflows/test.yml',
       '**/*.f90',
+      '**/*.py',
       'utils/Makefile',
       'utils/cli.c',
       'wrappers.f90'
