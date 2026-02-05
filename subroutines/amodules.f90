@@ -53,11 +53,13 @@ module xillver_tables
     implicit none 
     character (len=50), parameter ::  xillver = 'xillver-a-Ec5_normalised.fits'
     character (len=50), parameter ::  xillverDCp = 'xillverCp_v3.4_normalised.fits'
+    character (len=50), parameter ::  emulator = 'reltransDCp_emulator.pt'
     character (len=200) ::  path_tables 
     character (len=200) ::  pathname_xillver 
     character (len=200) ::  pathname_xillverD 
     character (len=200) ::  pathname_xillverDCp
     character (len=500) ::  path_name_reflionx_table
+    character (len=200) ::  pathname_emulator
 end module xillver_tables
 
 module gr_continuum
