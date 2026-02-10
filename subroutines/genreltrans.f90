@@ -93,7 +93,7 @@ subroutine genreltrans(Cp, dset, nlp, ear, ne, param, ifl, photar)
     real , intent(out) :: photar(ne)
     ! Variables of the subroutine
     ! initializer
-    integer :: me, xe, m, ionvar, refvar
+    integer :: m
     logical :: firstcall, needtrans, needconv, test
     double precision :: d
     ! Parameters of the model:
@@ -103,12 +103,9 @@ subroutine genreltrans(Cp, dset, nlp, ear, ne, param, ifl, photar)
     real :: f, fac
     ! internal energy grid (nex) and output/xspec (ne) energy grid
     real :: E, dE
-    real :: earx(0:nex)
     real :: ear(0:ne)
-    ! internal frequency grid, for when we do lag/frequency spectra
-    integer :: fbinx
     ! relativistic parameters and limit on rin and h
-    double precision :: height(nlp),contx_int(nlp)
+    double precision :: contx_int(nlp)
     ! lens needs to be allocatable to save it.
     double precision, allocatable :: frobs(:),frrel(:)
     ! TRANSFER FUNCTIONS and Cross spectrum dynamic allocation + variables
@@ -116,11 +113,11 @@ subroutine genreltrans(Cp, dset, nlp, ear, ne, param, ifl, photar)
     ! double precision :: frobs(nlp), frrel(nlp)  !reflection fraction variables
     ! (verbose)
     ! Radial and angle profile
-    integer :: mubin, rbin, ibin
+    integer :: mubin, rbin
     real :: contx(nex,nlp)
     real :: mue, logxi0, reline_w0(nlp, nex), imline_w0(nlp, nex),photarx(nex), photerx(nex)
     real :: absorbx(nex), Hx(nex), Hx_delta(nex),Hx_dlogxi(nex)
-    real :: ReGx(nex),ImGx(nex),ReS(ne),ImS(ne)
+    real :: ReS(ne),ImS(ne)
     ! variable for non linear effects
     integer :: DC, ionvariation
     real :: photarx_1(nex), photarx_2(nex), photarx_delta(nex),photarx_dlogxi(nex)
@@ -133,21 +130,18 @@ subroutine genreltrans(Cp, dset, nlp, ear, ne, param, ifl, photar)
     double precision :: fhisave, flosave
     ! Functions
     integer :: i, j
-    double precision :: disco, dgsofac
     ! New
-    double precision :: fcons,get_fcons,contx_temp!,ell13pt6,lacc,get_lacc,
+    double precision :: fcons,contx_temp!,ell13pt6,lacc,get_lacc,
     real :: Gamma0,logne,Cutoff_0,thetae,logxi1, logxi2
     integer :: Cp_cont
     real time_start,time_end !runtime stuff
-    integer env_test
-    integer get_env_int
 
     data firstcall /.true./
     data Cpsave/2/
     data prev_nf /-1/
     ! Save the first call variables
-    save firstcall, earx, me, xe, d, test
-    save paramsave, fhisave, flosave, prev_nf, refvar, ionvar
+    save firstcall, d, test
+    save paramsave, fhisave, flosave, prev_nf
     save frobs, frrel, Cpsave, needtrans
 
     type(t_config), save :: config
