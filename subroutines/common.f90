@@ -192,7 +192,7 @@ contains
 
     ! Initialise all of the configuration fields that can be derived after
     ! `read_environment_variables` has been called, and allocate the arrays
-    ! in `arrs`
+    ! in `arrays`
     subroutine setup_arrays(config, arrays, nlp)
         use conv_mod, only: nex
         type(t_config), intent(inout) :: config
