@@ -3,16 +3,19 @@ from astropy.io import fits
 import os
 import sys
 ########################################################################
+# Utility function to handle yes/no user input
 def query_yes_no(question, default="no"):
-    """Ask a yes/no question via raw_input() and return their answer.
+     """
+    Ask a yes/no question and return the user's response.
 
-    "question" is a string that is presented to the user.
-    "default" is the presumed answer if the user just hits <Enter>.
-        It must be "yes" (the default), "no" or None (meaning
-        an answer is required of the user).
+    Parameters:
+        question (str): The question displayed to the user.
+        default (str): Default answer if the user presses Enter.
+                       Options are "yes", "no", or None.
 
-    The "answer" return value is True for "yes" or False for "no".
-    """
+    Returns:
+        bool: True for "yes", False for "no"."""
+    # Mapping of user inputs to boolean values
     valid = {"yes": True, "y": True, "ye": True,
              "no": False, "n": False}
     if default is None:
@@ -22,10 +25,12 @@ def query_yes_no(question, default="no"):
     elif default == "no":
         prompt = " [y/N] "
     else:
+        # Raise error if default value is invalid
         raise ValueError("invalid default answer: '%s'" % default)
-
+    # Loop until user provides valid input
     while True:
         sys.stdout.write(question + prompt)
+        # Get user input and convert to lowercase
         choice = input().lower()
         if default is not None and choice == '':
             return valid[default]
