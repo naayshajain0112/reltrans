@@ -28,6 +28,7 @@ type_int_p    = ct.POINTER(ct.c_int)
 # import sys
 # sys.path.append(path_to_location_of_this_file)
 #######################################################################
+# Load the compiled Fortran shared library
 
 lib = ct.cdll.LoadLibrary(os.path.dirname(__file__) + "/lib_reltrans.so")
 
@@ -69,17 +70,17 @@ wsim_dist.argtypes = [type_float_p, type_int_p, type_float_p, type_int_p, type_f
 wsim_dist.restype  = None
 
 def gen_wrap(ear, params, func):
-    '''
-    Takes:
+    """
+    Generic wrapper to call Fortran reltrans functions.
 
-    ear   : numpy array of energies
-    params: array of parameters (double)
+    Parameters:
+        ear (numpy.ndarray): Array of energy values.
+        params (numpy.ndarray): Model parameters.
+        func (callable): Fortran function to execute.
 
     Returns:
-
-    photar: numpy.array (double)
-    '''
-
+        numpy.ndarray: Computed photon array.
+    """
     # to be extra sure you could put the following
     # but it could slow down the code
     #
@@ -102,20 +103,43 @@ def gen_wrap(ear, params, func):
 #     return gen_wrap(ear, params, w)
 
 def reltransPL(ear, params):
+    """
+    Wrapper for reltrans power-law model.
+    Parameters:
+        ear (numpy.ndarray): Energy array
+        params (numpy.ndarray): Model parameters
+    Returns:
+        numpy.ndarray: Output spectrum
+    """
     return gen_wrap(ear, params, wPL)
 
 def reltransDCp(ear, params):
+    """
+    Wrapper for reltrans DCp model.
+    """
     return gen_wrap(ear, params, wDCp)
 
 def reltransDbl(ear, params):
+    """
+    Wrapper for reltrans double model.
+    """
     return gen_wrap(ear, params,wDbl)
 
 def reltransx(ear, params):
+     """
+    Wrapper for reltrans x model.
+    """
     return gen_wrap(ear, params, wx)
 
 def rtdist(ear, params):
+    """
+    Wrapper for reltrans distance model.
+    """
     return gen_wrap(ear, params, wdist)
 
 def simrtdist(ear, params):
+    """
+    Wrapper for simulated reltrans distance model.
+    """
     return gen_wrap(ear, params, wsim_dist)
 
