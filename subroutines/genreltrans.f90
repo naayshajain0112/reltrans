@@ -97,6 +97,7 @@ contains
         use conv_mod, only: nex, conv_one_FFTw
         use gr_continuum, only: gso, lens
         use radial_grids, only: logner, gsdr, logxir
+        use rest_frame_mod, only: rest_frame
         type(t_config), intent(in) :: config
         type(t_model_arguments), intent(in) :: model_args
         type(t_arrays), intent(inout) :: arrays
@@ -286,6 +287,7 @@ subroutine genreltrans(Cp, dset, nlp, ear, ne, param, ifl, photar)
     use radial_grids
     use gr_continuum
     use m_genreltrans
+    use rest_frame_mod, only: rest_frame
     implicit none
     ! Constants
     double precision, parameter :: pi = acos(-1.d0), rnmax = 300.d0,dlogf = 0.09 !This is a resolution parameter (base 10)
