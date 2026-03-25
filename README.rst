@@ -1,7 +1,7 @@
 |Docs| |License| |GitHub release|
 
 Reltrans
-========
+=======
 
 Reltrans is an X-ray reverberation mapping model designed to be applicable to 
 both AGN and black hole X-ray binaries. It can be used to model both time 
