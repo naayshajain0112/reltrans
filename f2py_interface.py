@@ -78,6 +78,7 @@ def gen_wrap(ear, params, func):
         params (numpy.ndarray): Model parameters.
         func (callable): Fortran function to execute.
 
+
     Returns:
         numpy.ndarray: Computed photon array.
     """
@@ -121,7 +122,7 @@ def reltransDCp(ear, params):
 
 def reltransDbl(ear, params):
     """
-    Wrapper for reltrans double model.
+    Wrapper for reltrans double lamppost model.
     """
     return gen_wrap(ear, params,wDbl)
 
